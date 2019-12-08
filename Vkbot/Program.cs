@@ -132,9 +132,7 @@ namespace Vkbot
                                     },
                                 PeerId = ms.Message.PeerId
                             });
-                            Log("Информация для дебага\nЗапрос:\n" + request
-                                + "\nВремя ответа: " + sw.ElapsedMilliseconds.ToString()
-                                + "\n------------");
+                            Log(request, "", sw.ElapsedMilliseconds.ToString());
                             return;
                         }
                     }
@@ -181,10 +179,7 @@ namespace Vkbot
                 PeerId = ms.Message.PeerId
             });
             if (!request.Contains("/help"))
-                Log("Информация для дебага\nЗапрос:\n" + request
-                                + "\n\nОтвет:\n" + (message.Text ?? "")
-                                + "\nВремя ответа: " + sw.ElapsedMilliseconds.ToString()
-                                + "\n------------");
+                Log(request, message.Text ?? "", sw.ElapsedMilliseconds.ToString());
         }
 
         private static void sendMessage(MessagesSendParams messagesParams)
@@ -245,11 +240,14 @@ namespace Vkbot
             }
         }
 
-        private static void Log(string data)
+        private static void Log(string request, string responce, string time)
         {
             using (StreamWriter streamWriter = new StreamWriter(logPath, true, Encoding.Default))
             {
-                streamWriter.WriteLine(data);
+                streamWriter.WriteLine("Запрос:\n" + request
+                                + "\n\nОтвет:\n" + responce
+                                + "\nВремя ответа: " + time
+                                + "\n------------");
             }
         }
     }

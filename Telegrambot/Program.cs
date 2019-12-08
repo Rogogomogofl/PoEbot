@@ -77,9 +77,7 @@ namespace Telegrambot
                             {
                                 sw.Stop();
                                 await telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: data[1]);
-                                Log("Информация для дебага\nЗапрос:\n" + request
-                                    + "\nВремя ответа: " + sw.ElapsedMilliseconds.ToString()
-                                    + "\n------------");
+                                Log(request, "", sw.ElapsedMilliseconds.ToString());
                                 return;
                             }
                         }
@@ -106,10 +104,7 @@ namespace Telegrambot
                 if (message.Loaded_Photo != null) await telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: message.Loaded_Photo.TelegramId);
                 sw.Stop();
                 if (!(request.Contains("/help") || request.Contains("/start")))
-                    Log("Информация для дебага\nЗапрос:\n" + request
-                        + "\n\nОтвет:\n" + (message.Text ?? "")
-                        + "\nВремя ответа: " + sw.ElapsedMilliseconds.ToString()
-                        + "\n------------");
+                    Log(request, message.Text ?? "", sw.ElapsedMilliseconds.ToString());
             }
         }
 
@@ -147,11 +142,14 @@ namespace Telegrambot
             }
         }
 
-        private static void Log(string data)
+        private static void Log(string request, string responce, string time)
         {
             using (StreamWriter streamWriter = new StreamWriter(logPath, true, Encoding.Default))
             {
-                streamWriter.WriteLine(data);
+                streamWriter.WriteLine("Запрос:\n" + request
+                                + "\n\nОтвет:\n" + responce
+                                + "\nВремя ответа: " + time
+                                + "\n------------");
             }
         }
     }
