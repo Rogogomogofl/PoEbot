@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{87D6F502-4B85-4576-9BCB-F6749FAA0813}</ProjectGuid>
+    <ProjectGuid>{7324E68D-3E74-4351-8CCE-79F3008884F7}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Poebot</RootNamespace>
-    <AssemblyName>Poebot</AssemblyName>
+    <RootNamespace>Telegrambot</RootNamespace>
+    <AssemblyName>Telegrambot</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -33,38 +33,38 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HtmlAgilityPack, Version=1.11.17.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
-      <HintPath>..\packages\HtmlAgilityPack.1.11.17\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    <Reference Include="MihaZupan.HttpToSocks5Proxy, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\HttpToSocks5Proxy.1.4.0\lib\net45\MihaZupan.HttpToSocks5Proxy.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="OxyPlot, Version=2.0.0.0, Culture=neutral, PublicKeyToken=638079a8f0bd61e9, processorArchitecture=MSIL">
-      <HintPath>..\packages\OxyPlot.Core.2.0.0\lib\net45\OxyPlot.dll</HintPath>
-    </Reference>
-    <Reference Include="OxyPlot.WindowsForms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=245eacd6b5d2d338, processorArchitecture=MSIL">
-      <HintPath>..\packages\OxyPlot.WindowsForms.2.0.0\lib\net45\OxyPlot.WindowsForms.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="Telegram.Bot, Version=15.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Telegram.Bot.15.1.0\lib\net45\Telegram.Bot.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Message.cs" />
-    <Compile Include="Poebot.cs" />
-    <Compile Include="Poewatch.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Poebot\Poebot.csproj">
+      <Project>{87d6f502-4b85-4576-9bcb-f6749faa0813}</Project>
+      <Name>Poebot</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
