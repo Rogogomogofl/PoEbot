@@ -27,7 +27,7 @@ namespace Vkbot
         static string subPath = @"bot/vksub.txt";
         static string logPath = @"bot/vklog.txt";
         static VkApi vkapi = new VkApi();
-        static Poebot.Poebot poebot = new Poebot.Poebot();
+        static Poebot.Poewatch poewatch = new Poebot.Poewatch();
         static SyndicationItem lastEn = null, lastRu = null;
         static Timer rssUpdate;
 
@@ -99,6 +99,7 @@ namespace Vkbot
 
         private static void processReqest(GroupUpdate ms)
         {
+            Poebot.Poebot poebot = new Poebot.Poebot(poewatch);
             Stopwatch sw = new Stopwatch();
             sw.Start();
             string request;

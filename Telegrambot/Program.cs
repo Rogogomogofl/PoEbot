@@ -21,7 +21,7 @@ namespace Telegrambot
         static string cachePath = @"bot/telegramcache.txt";
         static string langPath = @"bot/telegramlang.txt";
         static string logPath = @"bot/telegramlog.txt";
-        static Poebot.Poebot poebot = new Poebot.Poebot();
+        static Poebot.Poewatch poewatch = new Poebot.Poewatch();
         static SyndicationItem lastEn = null, lastRu = null;
         static Timer rssUpdate;
 
@@ -59,6 +59,8 @@ namespace Telegrambot
                     if (sobaka[1] == "poeinfobot") e.Message.Text = sobaka[0];
                     else return;
                 }
+                var chats = File.ReadAllLines(langPath);//to do
+                Poebot.Poebot poebot = new Poebot.Poebot(poewatch);
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
                 string request = e.Message.Text;
@@ -83,7 +85,6 @@ namespace Telegrambot
                         }
                     }
                 }
-                var chats = File.ReadAllLines(langPath);
                 Poebot.Message message = poebot.ProcessRequest(request);
                 if (message == null) return;
                 if (message.Text != null) await telegramBot.SendTextMessageAsync(chatId: e.Message.Chat.Id, text: message.Text);
