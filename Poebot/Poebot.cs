@@ -534,7 +534,7 @@ namespace Poebot
                         using (Bitmap bmp = new Bitmap(fileName))
                         {
                             Color clr;
-                            int x = bmp.Width - 150, y = 400, height = 0, wigth = 0;
+                            int x = bmp.Width - 150, y = 300, height = 0, wigth = 0;
                             for (; y < bmp.Height; y++)
                             {
                                 clr = bmp.GetPixel(x, y);
