@@ -132,6 +132,7 @@ namespace Poebot
                     }
                 case "i":
                     {
+                        return new Message(text: "Команда временно выключена из-за работ на wiki");
                         return wikiScreenshot(param);
                     }
                 case "l":
@@ -529,9 +530,8 @@ namespace Poebot
                     try
                     {
                         url = url.Replace("'", "%27");
-                        Process.Start("/bin/bash", "-c \"" + $"python /home/pi/.local/bin/webscreenshot -o /tmp/screenshots -f bmp {url}" + "\"").WaitForExit();
-                        string fileName = $"/tmp/screenshots/{ Regex.Replace(url.Replace(".gamepedia.com", ".gamepedia.com:443").Replace("://", "_"), @"[^\w.-]", "_") }.bmp";
-                        using (Bitmap bmp = new Bitmap(fileName))
+                        Process.Start("/bin/bash", "-c \"" + $"cutycapt --url={url} --out=image.bmp" + "\"").WaitForExit();
+                        using (Bitmap bmp = new Bitmap("/home/pi/image.bmp"))
                         {
                             Color clr;
                             int x = bmp.Width - 150, y = 300, height = 0, wigth = 0;
