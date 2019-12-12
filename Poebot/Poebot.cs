@@ -132,7 +132,6 @@ namespace Poebot
                     }
                 case "i":
                     {
-                        return new Message(text: "Команда временно выключена из-за работ на wiki");
                         return wikiScreenshot(param);
                     }
                 case "l":
