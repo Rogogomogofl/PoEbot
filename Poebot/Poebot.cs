@@ -72,7 +72,7 @@ namespace Poebot
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine($"{DateTime.Now}: {e}");
                 return string.Empty;
             }
             if (result[3].Count() != 0)
@@ -164,7 +164,7 @@ namespace Poebot
 "\n/sub en или /sub ru - Подписка беседы на новости на соответствующем языке" +
 "\n/top категория [количество] [группа] - Вывод топа предметов по цене из указанной категории. По умолчанию количество = 10, группы все" +
 "\n/hm название - Подсказка всех предметов по названию" +
-"\n\nЗапрос можно писать сокращено, если не указано обратное (например /p xo hea вместо /p Xoph's Heart). Команды /p, /l, /h, /top и /hm работают только с запросами на английском языке, все остальные также понимают русский"
+"\n\nЗапрос можно писать сокращено, если не указано обратное (например /p xo hea вместо /p Xoph's Heart). Команды /p, /b, /l, /h, /top и /hm работают только с запросами на английском языке, все остальные также понимают русский"
                         );
                     }
                 case "sub":
@@ -195,7 +195,7 @@ namespace Poebot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine($"{DateTime.Now}: {e}");
                     return new Message("В данный момент сервер с базой данных недоступен");
                 }
                 string leagues = "";
@@ -233,7 +233,7 @@ namespace Poebot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine($"{DateTime.Now}: {e}");
                     return new Message("В данный момент сервер с базой данных недоступен");
                 }
                 ja = jo["leagues"].Value<JArray>();
@@ -257,7 +257,7 @@ namespace Poebot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine($"{DateTime.Now}: {e}");
                     return new Message("В данный момент сервер с базой данных недоступен");
                 }
             }
@@ -270,7 +270,7 @@ namespace Poebot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine($"{DateTime.Now}: {e}");
                     return new Message("В данный момент сервер с базой данных недоступен");
                 }
             }
@@ -469,7 +469,7 @@ namespace Poebot
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine($"{DateTime.Now}: {e}");
                 return new Message("В данный момент сервер с базой данных недоступен");
             }
             if (result[3].Count() != 0)
@@ -502,7 +502,7 @@ namespace Poebot
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message); return new Message("В данный момент сервер с базой данных недоступен");
+                Console.WriteLine($"{DateTime.Now}: {e}"); return new Message("В данный момент сервер с базой данных недоступен");
             }
             if (result[3].Count() != 0)
             {
@@ -553,7 +553,7 @@ namespace Poebot
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine(e.Message);
+                        Console.WriteLine($"{DateTime.Now}: {e}");
                         return new Message("Не удалось вывести изображение этой статьи");
                     }
                 }
@@ -592,7 +592,7 @@ namespace Poebot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine($"{DateTime.Now}: {e}");
                     return new Message("В данный момент сервис недоступен");
                 }
             }
@@ -673,7 +673,7 @@ namespace Poebot
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine($"{DateTime.Now}: {e}");
                 return new Message("В данный момент сервер с базой данных недоступен");
             }
             string account = "";
@@ -699,7 +699,7 @@ namespace Poebot
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine($"{DateTime.Now}: {e}");
                 return new Message("В данный момент сервер с базой данных недоступен");
             }
             if (ja.Count == 0)
@@ -722,7 +722,7 @@ namespace Poebot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine($"{DateTime.Now}: {e}");
                     return new Message("Ошибка подписки, попробуйте повторить позже");
                 }
                 string thisSub = subs.FirstOrDefault(x => Regex.IsMatch(x, parameters[1] + " " + parameters[0]));
@@ -748,7 +748,7 @@ namespace Poebot
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine(e.Message);
+                        Console.WriteLine($"{DateTime.Now}: {e}");
                         return new Message("Ошибка подписки, попробуйте повторить позже");
                     }
                 }
@@ -778,7 +778,7 @@ namespace Poebot
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine($"{DateTime.Now}: {e}");
                 return null;
             }
         }
@@ -805,7 +805,7 @@ namespace Poebot
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine($"{DateTime.Now}: {e}");
                 return null;
             }
         }

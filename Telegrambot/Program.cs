@@ -39,7 +39,7 @@ namespace Telegrambot
             rssUpdate.AutoReset = true;
             rssUpdate.Enabled = true;
 
-            var proxy = new HttpToSocks5Proxy("207.154.233.200", 1080);
+            var proxy = new HttpToSocks5Proxy("124.41.211.78", 42807);
             proxy.ResolveHostnamesLocally = true;
             telegramBot = new TelegramBotClient(File.ReadAllText("bot/telegramtoken.txt"), proxy);
             telegramBot.OnMessage += TelegramBot_OnMessage;
@@ -139,7 +139,7 @@ namespace Telegrambot
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"{DateTime.Now}: {ex}");
             }
         }
 

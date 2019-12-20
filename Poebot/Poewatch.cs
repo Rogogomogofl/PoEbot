@@ -93,7 +93,7 @@ namespace Poebot
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine($"{DateTime.Now}: {e}");
             }
             try
             {
@@ -102,7 +102,7 @@ namespace Poebot
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine($"{DateTime.Now}: {e}");
                 updateTimer.Interval = 5000;
                 return;
             }

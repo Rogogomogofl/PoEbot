@@ -160,7 +160,7 @@ namespace Vkbot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine($"{DateTime.Now}: {e}");
                     return;
                 }
             }
@@ -237,7 +237,7 @@ namespace Vkbot
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"{DateTime.Now}: {ex}");
             }
         }
 
