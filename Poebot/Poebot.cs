@@ -108,7 +108,7 @@ namespace Poebot
                     }
                 case "w":
                     {
-                        return wikiSearch(param);
+                        return new Message(text: wikiSearch(param).url);
                     }
                 case "p":
                     {
@@ -458,10 +458,10 @@ namespace Poebot
             return new Message(fstRetStr.Substring(0, fstRetStr.Length - 2) + sndRetStr);
         }
 
-        private Message wikiSearch(string search)
+        private (string name, string url) wikiSearch(string search)
         {
             search = search.ToLower();
-            string url;
+            string name, url;
             JArray result = null;
             try
             {
@@ -469,40 +469,7 @@ namespace Poebot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e}");
-                return new Message("В данный момент сервер с базой данных недоступен");
-            }
-            if (result[3].Count() != 0)
-            {
-                url = result[3][0].ToString();
-            }
-            else
-            {
-                Regex regex = new Regex(@"^" + search.Replace(" ", @"\D*\s\D*") + @"\D*");
-                Regex theRegex = new Regex(@"^the " + search.Replace(" ", @"\D*\s\D*") + @"\D*");
-                JObject item = poewatch.FirstOrDefault(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())));
-                if (item != null)
-                {
-                    url = "https://pathofexile.gamepedia.com/" + item["name"].Value<string>().Replace(' ', '_');
-                }
-                else return new Message("По запросу \"" + search + "\" ничего не найдено");
-            }
-            return new Message(url);
-        }
-
-        private Message wikiScreenshot(string search)
-        {
-            search = search.ToLower();
-            string name = "";
-            string url = "";
-            JArray result = null;
-            try
-            {
-                result = wikiOpensearch(search, search[0] > 191);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"{DateTime.Now}: {e}"); return new Message("В данный момент сервер с базой данных недоступен");
+                Console.WriteLine($"{DateTime.Now}: {e}"); return ("", "В данный момент сервер с базой данных недоступен");
             }
             if (result[3].Count() != 0)
             {
@@ -519,9 +486,17 @@ namespace Poebot
                     name = item["name"].Value<string>();
                     url = "https://pathofexile.gamepedia.com/" + name.Replace(' ', '_');
                 }
-                else return new Message("По запросу \"" + search + "\" ничего не найдено");
+                else return ("", "По запросу \"" + search + "\" ничего не найдено");
             }
+            return (name, url);
+        }
 
+        private Message wikiScreenshot(string search)
+        {
+            var wiki = wikiSearch(search);
+            string url = wiki.url;
+            string name = wiki.name;
+            if (name == "") return new Message(text: url);
             using (var memstream = new MemoryStream())
             {
                 lock (screenshotLocker)
@@ -560,6 +535,7 @@ namespace Poebot
                 return new Message(image: memstream.ToArray(), sysInfo: name.Replace(' ', '-').Replace("'", "").ToLower());
             }
         }
+
         private Message labLayout(string search)
         {
             Regex regex = new Regex(@"^" + search.ToLower() + @"\S*");
