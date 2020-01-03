@@ -8,18 +8,23 @@ namespace Poebot
 {
     public class Poewatch
     {
-        public readonly string[] TradeCategories = { "gem", "weapon", "accessory", "armour", "jewel", "flask", "card", "currency", "map", "prophecy" };
+        public static readonly string[] TradeCategories = { "gem", "weapon", "accessory", "armour", "jewel", "flask", "card", "currency", "map", "prophecy" };
         private JArray itemsData = new JArray();
         private readonly object itemsDataLocker = new object();
-        private Timer updateTimer = new Timer(3600 * 1000);
+        private readonly Timer updateTimer = new Timer(3600 * 1000);
         public string DefaultLeague { get; private set; } = "Standard";
 
         public Poewatch()
         {
-            updateTimer.Elapsed += onTimedEvent;
+            updateTimer.Elapsed += OnTimedEvent;
             updateTimer.AutoReset = true;
             updateTimer.Enabled = true;
-            loadItemdata();
+            LoadItemdata();
+        }
+
+        ~Poewatch()
+        {
+            updateTimer.Dispose();
         }
 
         public bool IsDataLoaded()
@@ -39,22 +44,22 @@ namespace Poebot
             lock (itemsDataLocker) return itemsData.Where(predicate);
         }
 
-        public JArray Leagues()
+        public static JArray Leagues()
         {
             return JArray.Parse(Common.GetContent("https://api.poe.watch/leagues"));
         }
 
-        public JObject Item(string id)
+        public static JObject Item(string id)
         {
             return JObject.Parse(Common.GetContent("https://api.poe.watch/item?id=" + id));
         }
 
-        public JArray ItemData()
+        public static JArray ItemData()
         {
             return JArray.Parse(Common.GetContent("https://api.poe.watch/itemdata"));
         }
 
-        public JArray ItemHistory(string id, string league)
+        public static JArray ItemHistory(string id, string league)
         {
             return JArray.Parse(Common.GetContent("https://api.poe.watch/itemhistory?id=" + id + "&league=" + league));
         }
@@ -64,27 +69,27 @@ namespace Poebot
             return JArray.Parse(Common.GetContent("https://api.poe.watch/get?league=" + DefaultLeague + "&category=" + category));
         }
 
-        public JArray Get(string league, string category)
+        public static JArray Get(string league, string category)
         {
             return JArray.Parse(Common.GetContent("https://api.poe.watch/get?league=" + league + "&category=" + category));
         }
 
-        public JArray Accounts(string character)
+        public static JArray Accounts(string character)
         {
             return JArray.Parse(Common.GetContent("https://api.poe.watch/accounts?character=" + character));
         }
 
-        public JArray Characters(string account)
+        public static JArray Characters(string account)
         {
             return JArray.Parse(Common.GetContent("https://api.poe.watch/characters?account=" + account));
         }
 
-        private void onTimedEvent(object sender, ElapsedEventArgs e)
+        private void OnTimedEvent(object sender, ElapsedEventArgs e)
         {
-            loadItemdata();
+            LoadItemdata();
         }
 
-        private void loadItemdata()
+        private void LoadItemdata()
         {
             try
             {
