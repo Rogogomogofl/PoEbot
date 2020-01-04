@@ -109,7 +109,6 @@ namespace Poebot
             {
                 Console.WriteLine($"{DateTime.Now}: {e}");
                 updateTimer.Interval = 5000;
-                return;
             }
         }
     }

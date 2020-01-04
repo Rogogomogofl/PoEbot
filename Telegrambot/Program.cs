@@ -23,7 +23,7 @@ namespace Telegrambot
         const string langPath = @"bot/telegramlang.txt";
         const string logPath = @"bot/telegramlog.txt";
         static readonly Poebot.Poewatch poewatch = new Poebot.Poewatch();
-        static SyndicationItem lastEn = null, lastRu = null;
+        static SyndicationItem lastEn, lastRu;
         static Timer rssUpdate;
 
         static void Main()
@@ -94,9 +94,9 @@ namespace Telegrambot
                     Poebot.Message message = poebot.ProcessRequest(request);
                     if (message == null) return;
                     if (message.Text != null) telegramBot.SendTextMessageAsync(chatId: e.Message.Chat.Id, text: message.Text);
-                    if (message.Image != null)
+                    if (message.DoesHaveAnImage())
                     {
-                        using (MemoryStream stream = new MemoryStream(message.Image))
+                        using (MemoryStream stream = new MemoryStream(message.Image()))
                         {
                             var returnedMessage = telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: stream).Result;
                             if (request.Contains("/i "))
@@ -108,7 +108,7 @@ namespace Telegrambot
                             }
                         }
                     }
-                    if (message.Loaded_Photo != null) telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: message.Loaded_Photo.TelegramId);
+                    if (message.LoadedPhoto != null) telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: message.LoadedPhoto.TelegramId);
                     sw.Stop();
                     if (!(request.Contains("/help") || request.Contains("/start")))
                         Log(request, message.Text ?? "", sw.ElapsedMilliseconds.ToString());

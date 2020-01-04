@@ -9,7 +9,7 @@ namespace Poebot
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -25,8 +25,8 @@ namespace Poebot
                 Message message = poebot.ProcessRequest(query);
                 sw.Stop();
                 Console.WriteLine(message.Text);
-                if (message.Image != null)
-                    using (MemoryStream stream = new MemoryStream(message.Image))
+                if (message.DoesHaveAnImage())
+                    using (MemoryStream stream = new MemoryStream(message.Image()))
                     {
                         Bitmap bmp = new Bitmap(stream); 
                         bmp.Save("image.png", ImageFormat.Png);

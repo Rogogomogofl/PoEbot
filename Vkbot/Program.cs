@@ -28,7 +28,7 @@ namespace Vkbot
         const string logPath = @"bot/vklog.txt";
         static readonly VkApi vkapi = new VkApi();
         static readonly Poebot.Poewatch poewatch = new Poebot.Poewatch();
-        static SyndicationItem lastEn = null, lastRu = null;
+        static SyndicationItem lastEn, lastRu;
         static Timer rssUpdate;
 
         private static void Main()
@@ -45,7 +45,7 @@ namespace Vkbot
 
             Auth();
             LongPollServerResponse s = vkapi.Groups.GetLongPollServer(groupId: 178558335);
-            string Ts = s.Ts;
+            string ts = s.Ts;
 
             SendMessage(new MessagesSendParams
             {
@@ -59,15 +59,15 @@ namespace Vkbot
                 {
                     Auth();
                     s = vkapi.Groups.GetLongPollServer(groupId: 178558335);
-                    Ts = s.Ts;
+                    ts = s.Ts;
                 }
                 try
                 {
                     BotsLongPollHistoryResponse poll = vkapi.Groups.GetBotsLongPollHistory(
                             new BotsLongPollHistoryParams()
-                            { Server = s.Server, Ts = Ts, Key = s.Key, Wait = 1 });
-                    Ts = poll.Ts;
-                    if (poll?.Updates == null) continue;
+                            { Server = s.Server, Ts = ts, Key = s.Key, Wait = 1 });
+                    ts = poll.Ts;
+                    if (poll.Updates == null) continue;
                     foreach (var ms in poll.Updates.Where(x => x.Type == GroupUpdateType.MessageNew))
                     {
                         Task.Factory.StartNew(() => ProcessReqest(ms));
@@ -76,7 +76,7 @@ namespace Vkbot
                 catch
                 {
                     s = vkapi.Groups.GetLongPollServer(groupId: 178558335);
-                    Ts = s.Ts;
+                    ts = s.Ts;
                 }
 
             }
@@ -89,10 +89,10 @@ namespace Vkbot
             {
                 imageContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/png");
                 requestContent.Add(imageContent, "photo", "image.png");
-                using (var _httpClient = new HttpClient())
+                using (var httpClient = new HttpClient())
                 {
-                    var responce = _httpClient.PostAsync(url, requestContent).Result;
-                    return responce.Content.ReadAsStringAsync().Result;
+                    var response = httpClient.PostAsync(url, requestContent).Result;
+                    return response.Content.ReadAsStringAsync().Result;
                 }
             }
         }
@@ -143,12 +143,12 @@ namespace Vkbot
             Poebot.Message message = poebot.ProcessRequest(request);
             if (message == null) return;
             List<MediaAttachment> attachments = new List<MediaAttachment>();
-            if (message.Image != null)
+            if (message.DoesHaveAnImage())
             {
                 try
                 {
                     var uploadServer = vkapi.Photo.GetMessagesUploadServer((long)ms.Message.PeerId);
-                    var photo = vkapi.Photo.SaveMessagesPhoto(UploadStream(uploadServer.UploadUrl, message.Image));
+                    var photo = vkapi.Photo.SaveMessagesPhoto(UploadStream(uploadServer.UploadUrl, message.Image()));
                     if (ms.Message.Text.Contains("/i "))
                     {
                         using (StreamWriter stream = new StreamWriter(cachePath, true, Encoding.Default))
@@ -164,12 +164,12 @@ namespace Vkbot
                     return;
                 }
             }
-            if (message.Loaded_Photo != null)
+            if (message.LoadedPhoto != null)
             {
                 attachments.Add(new Photo
                 {
-                    Id = message.Loaded_Photo.VkId,
-                    OwnerId = message.Loaded_Photo.VkOwnerId
+                    Id = message.LoadedPhoto.VkId,
+                    OwnerId = message.LoadedPhoto.VkOwnerId
                 });
             }
             sw.Stop();

@@ -13,7 +13,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Timers;
 
 namespace Poebot
 {
@@ -62,7 +61,7 @@ namespace Poebot
         public string GetItemName(string search)
         {
             search = search.ToLower();
-            JArray result = null;
+            JArray result;
             try
             {
                 if (search[0] > 191)
@@ -108,7 +107,7 @@ namespace Poebot
                     }
                 case "w":
                     {
-                        return new Message(text: wikiSearch(param).url);
+                        return new Message(text: WikiSearch(param).url);
                     }
                 case "p":
                     {
@@ -201,15 +200,14 @@ namespace Poebot
                 string leagues = "";
                 foreach (var el in leaguesja)
                     leagues += el["name"].Value<string>() + "\n";
-                string LN = "";
                 try
                 {
-                    LN = srch.Substring(srch.IndexOf('|') + 1).TrimEnd(' ').TrimStart(' ');
-                    if (string.IsNullOrEmpty(LN))
+                    var ln = srch.Substring(srch.IndexOf('|') + 1).TrimEnd(' ').TrimStart(' ');
+                    if (string.IsNullOrEmpty(ln))
                         throw new Exception();
                     srch = srch.Substring(0, srch.IndexOf('|') - 1);
-                    Regex Lreg = new Regex(@"^" + LN.Replace(" ", @"\S*\s?") + @"\S*");
-                    league = leaguesja.FirstOrDefault(o => Lreg.IsMatch(o["name"].Value<string>().ToLower()))["name"].Value<string>();
+                    Regex lreg = new Regex(@"^" + ln.Replace(" ", @"\S*\s?") + @"\S*");
+                    league = leaguesja.FirstOrDefault(o => lreg.IsMatch(o["name"].Value<string>().ToLower()))["name"].Value<string>();
                 }
                 catch
                 {
@@ -221,7 +219,7 @@ namespace Poebot
             Regex regex = new Regex(@"^" + pattern.Replace(" ", @"\D*\s\D*") + @"\D*");
             Regex theRegex = new Regex(@"^the " + pattern.Replace(" ", @"\D*\s\D*") + @"\D*");
             JObject jo = new JObject();
-            JArray ja = new JArray();
+            JArray ja;
 
             var tmp = poewatch.Where(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())) && o["linkCount"]?.Value<string>() == (links == "" ? null : links) && (o["variation"] == null || o["variation"].Value<string>() == "1 socket") && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
             if (!tmp?.Any() ?? true) return new Message("По запросу \"" + srch + "\"" + (links != "" ? " " + links + "L" : "") + " не удалось получить данные о ценах");
@@ -248,7 +246,7 @@ namespace Poebot
 
             string poetrade = "http://poe.trade/search?league=" + league.Replace(' ', '+') + "&online=x&name=" + name.Replace(' ', '+') + (!string.IsNullOrEmpty(links) ? "&link_min=" + links : "")/* + (corrupted ? "&corrupted=1" : "")*/;
 
-            JArray history = new JArray();
+            JArray history;
             lock (requestLocker)
             {
                 try
@@ -358,9 +356,8 @@ namespace Poebot
             {
                 Regex regex = new Regex(@"^" + item.Replace(" ", @"\D*") + @"\D*");
                 Regex theRegex = new Regex(@"^the " + item.Replace(" ", @"\D*") + @"\D*");
-                JObject jo = new JObject();
-                jo = poewatch.FirstOrDefault(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())));
-                string result = "", category = "";
+                JObject jo = poewatch.FirstOrDefault(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())));
+                string result, category;
                 if (jo == null)
                 {
                     try
@@ -458,11 +455,11 @@ namespace Poebot
             return new Message(fstRetStr.Substring(0, fstRetStr.Length - 2) + sndRetStr);
         }
 
-        private (string name, string url) wikiSearch(string search)
+        private (string name, string url) WikiSearch(string search)
         {
             search = search.ToLower();
             string name, url;
-            JArray result = null;
+            JArray result;
             try
             {
                 result = WikiOpensearch(search, search[0] > 191);
@@ -493,7 +490,7 @@ namespace Poebot
 
         private Message WikiScreenshot(string search)
         {
-            var wiki = wikiSearch(search);
+            var wiki = WikiSearch(search);
             string url = wiki.url;
             string name = wiki.name;
             if (string.IsNullOrEmpty(name)) return new Message(text: url);
@@ -652,7 +649,7 @@ namespace Poebot
                 Console.WriteLine($"{DateTime.Now}: {e}");
                 return new Message("В данный момент сервер с базой данных недоступен");
             }
-            string account = "";
+            string account;
             try
             {
                 account = (string)ja[0]["account"];
@@ -691,7 +688,7 @@ namespace Poebot
             string[] parameters = prs.Split('+');
             if (Regex.IsMatch(parameters[0], @"(ru|en)"))
             {
-                List<string> subs = new List<string>();
+                List<string> subs;
                 try
                 {
                     subs = File.ReadAllLines(parameters[2]).ToList();
@@ -775,10 +772,10 @@ namespace Poebot
                     stream.Write(data, 0, data.Length);
                 }
                 var response = (HttpWebResponse)request.GetResponse();
-                string responseString = string.Empty;
+                string responseString;
                 using (var streamReader = new StreamReader(response.GetResponseStream())) responseString = streamReader.ReadToEnd();
                 var jo = JObject.Parse(responseString);
-                return new Message(text: "https://pob.party/share/" + jo["url"].ToString());
+                return new Message(text: "https://pob.party/share/" + jo["url"].Value<string>());
             }
             catch (Exception e)
             {
