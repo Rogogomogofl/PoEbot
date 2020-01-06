@@ -209,7 +209,7 @@ namespace Vkbot
                     var feed = SyndicationFeed.Load(r);
                     var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
                     if (lastEn == null) lastEn = last;
-                    if (last.Links[0].Uri != lastEn.Links[0].Uri)
+                    if (last.Links[0].Uri != lastEn.Links[0].Uri && last.PublishDate > lastEn.PublishDate)
                     {
                         lastEn = last;
                         var enSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sen"));
@@ -226,7 +226,7 @@ namespace Vkbot
                     var feed = SyndicationFeed.Load(r);
                     var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
                     if (lastRu == null) lastRu = last;
-                    if (last.Links[0].Uri != lastRu.Links[0].Uri)
+                    if (last.Links[0].Uri != lastRu.Links[0].Uri && last.PublishDate > lastRu.PublishDate)
                     {
                         lastRu = last;
                         var ruSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sru"));
