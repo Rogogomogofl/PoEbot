@@ -502,7 +502,7 @@ namespace Poebot
                     {
                         url = url.Replace("'", "%27");
                         Process.Start("/bin/bash", "-c \"" + $"cutycapt --url={url} --out=image.bmp" + "\"").WaitForExit();
-                        using (Bitmap bmp = new Bitmap("/home/pi/image.bmp"))
+                        using (Bitmap bmp = new Bitmap("image.bmp"))
                         {
                             Color clr;
                             int x = bmp.Width - 150, y = 300, height = 0, wigth = 0;

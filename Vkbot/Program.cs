@@ -44,28 +44,24 @@ namespace Vkbot
             rssUpdate.Enabled = true;
 
             Auth();
-            LongPollServerResponse s = vkapi.Groups.GetLongPollServer(groupId: 178558335);
-            string ts = s.Ts;
+            LongPollServerResponse serverResponse = vkapi.Groups.GetLongPollServer(groupId: 178558335);
+            string ts = serverResponse.Ts;
 
-            SendMessage(new MessagesSendParams
-            {
-                Message = "Ready",
-                UserId = 37321011
-            });
+            Console.WriteLine("Working");
 
             while (true)
             {
                 if (!vkapi.IsAuthorized)
                 {
                     Auth();
-                    s = vkapi.Groups.GetLongPollServer(groupId: 178558335);
-                    ts = s.Ts;
+                    serverResponse = vkapi.Groups.GetLongPollServer(groupId: 178558335);
+                    ts = serverResponse.Ts;
                 }
                 try
                 {
                     BotsLongPollHistoryResponse poll = vkapi.Groups.GetBotsLongPollHistory(
                             new BotsLongPollHistoryParams()
-                            { Server = s.Server, Ts = ts, Key = s.Key, Wait = 1 });
+                            { Server = serverResponse.Server, Ts = ts, Key = serverResponse.Key, Wait = 1 });
                     ts = poll.Ts;
                     if (poll.Updates == null) continue;
                     foreach (var ms in poll.Updates.Where(x => x.Type == GroupUpdateType.MessageNew))
@@ -75,8 +71,8 @@ namespace Vkbot
                 }
                 catch
                 {
-                    s = vkapi.Groups.GetLongPollServer(groupId: 178558335);
-                    ts = s.Ts;
+                    serverResponse = vkapi.Groups.GetLongPollServer(groupId: 178558335);
+                    ts = serverResponse.Ts;
                 }
 
             }

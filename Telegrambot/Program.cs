@@ -47,7 +47,7 @@ namespace Telegrambot
             telegramBot = new TelegramBotClient(File.ReadAllText("bot/telegramtoken.txt"), proxy);
             telegramBot.OnMessage += TelegramBot_OnMessage;
             telegramBot.StartReceiving();
-            telegramBot.SendTextMessageAsync(chatId: 792056367, text: "Ready");
+            Console.WriteLine("Working");
             while (true) ;
         }
 

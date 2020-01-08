@@ -14,7 +14,7 @@ namespace Poebot
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             Poewatch poewatch = new Poewatch();
-            Console.WriteLine("Done");
+            Console.WriteLine("Working");
             while (true)
             {
                 Poebot poebot = new Poebot(poewatch);
