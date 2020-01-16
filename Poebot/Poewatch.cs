@@ -22,11 +22,6 @@ namespace Bot
             LoadItemdata();
         }
 
-        ~Poewatch()
-        {
-            updateTimer.Dispose();
-        }
-
         public bool IsDataLoaded()
         {
             lock (itemsDataLocker)
@@ -102,7 +97,11 @@ namespace Bot
             }
             try
             {
-                lock (itemsDataLocker) itemsData = ItemData();
+                lock (itemsDataLocker)
+                {
+                    itemsData.Clear();
+                    itemsData = ItemData();
+                }
                 updateTimer.Interval = 3600 * 1000;
             }
             catch (Exception e)
