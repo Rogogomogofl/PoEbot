@@ -246,10 +246,7 @@ namespace Vkbot
         {
             using (StreamWriter streamWriter = new StreamWriter(logPath, true, Encoding.Default))
             {
-                streamWriter.WriteLine("Запрос:\n" + request
-                                + "\n\nОтвет:\n" + responce
-                                + "\nВремя ответа: " + time
-                                + "\n------------");
+                streamWriter.WriteLine($"{DateTime.Now}\nЗапрос:\n{request}\n\nОтвет:\n{responce}\nВремя ответа: {time}\n------------");
             }
         }
     }
