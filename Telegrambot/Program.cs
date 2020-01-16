@@ -1,4 +1,5 @@
-﻿using MihaZupan;
+﻿using Bot;
+using MihaZupan;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -22,7 +23,7 @@ namespace Telegrambot
         const string cachePath = @"bot/telegramcache.txt";
         const string langPath = @"bot/telegramlang.txt";
         const string logPath = @"bot/telegramlog.txt";
-        static readonly Poebot.Poewatch poewatch = new Poebot.Poewatch();
+        static readonly Poewatch poewatch = new Poewatch();
         static SyndicationItem lastEn, lastRu;
         static Timer rssUpdate;
 
@@ -66,7 +67,7 @@ namespace Telegrambot
                         else return;
                     }
                     var chats = File.ReadAllLines(langPath);//to do
-                    Poebot.Poebot poebot = new Poebot.Poebot(poewatch);
+                    Poebot poebot = new Poebot(poewatch);
                     Stopwatch sw = new Stopwatch();
                     sw.Start();
                     string request = e.Message.Text;
@@ -91,7 +92,7 @@ namespace Telegrambot
                             }
                         }
                     }
-                    Poebot.Message message = poebot.ProcessRequest(request);
+                    Message message = poebot.ProcessRequest(request);
                     if (message == null) return;
                     if (message.Text != null) telegramBot.SendTextMessageAsync(chatId: e.Message.Chat.Id, text: message.Text);
                     if (message.DoesHaveAnImage())

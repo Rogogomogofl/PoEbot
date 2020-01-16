@@ -2,7 +2,7 @@
 using System.IO;
 using System.Net;
 
-namespace Poebot
+namespace Bot
 {
     static class Common
     {

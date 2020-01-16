@@ -1,4 +1,4 @@
-﻿namespace Poebot
+﻿namespace Bot
 {
     public class LoadedPhoto
     {

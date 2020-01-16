@@ -14,7 +14,7 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Poebot
+namespace Bot
 {
     public class Poebot
     {
@@ -221,8 +221,8 @@ namespace Poebot
             JObject jo = new JObject();
             JArray ja;
 
-            var tmp = poewatch.Where(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())) && o["linkCount"]?.Value<string>() == (links == "" ? null : links) && (o["variation"] == null || o["variation"].Value<string>() == "1 socket") && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
-            if (!tmp?.Any() ?? true) return new Message("По запросу \"" + srch + "\"" + (links != "" ? " " + links + "L" : "") + " не удалось получить данные о ценах");
+            var tmp = poewatch.Where(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())) && o["linkCount"]?.Value<string>() == (string.IsNullOrEmpty(links) ? null : links) && (o["variation"] == null || o["variation"].Value<string>() == "1 socket") && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
+            if (!tmp?.Any() ?? true) return new Message("По запросу \"" + srch + "\"" + (!string.IsNullOrEmpty(links) ? " " + links + "L" : "") + " не удалось получить данные о ценах");
             foreach (var token in tmp)
             {
                 try

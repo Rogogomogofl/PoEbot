@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Bot;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -27,7 +28,7 @@ namespace Vkbot
         const string subPath = @"bot/vksub.txt";
         const string logPath = @"bot/vklog.txt";
         static readonly VkApi vkapi = new VkApi();
-        static readonly Poebot.Poewatch poewatch = new Poebot.Poewatch();
+        static readonly Poewatch poewatch = new Poewatch();
         static SyndicationItem lastEn, lastRu;
         static Timer rssUpdate;
 
@@ -95,7 +96,7 @@ namespace Vkbot
 
         private static void ProcessReqest(GroupUpdate ms)
         {
-            Poebot.Poebot poebot = new Poebot.Poebot(poewatch);
+            Poebot poebot = new Poebot(poewatch);
             Stopwatch sw = new Stopwatch();
             sw.Start();
             string request;
@@ -136,7 +137,7 @@ namespace Vkbot
                 }
             }
 
-            Poebot.Message message = poebot.ProcessRequest(request);
+            Bot.Message message = poebot.ProcessRequest(request);
             if (message == null) return;
             List<MediaAttachment> attachments = new List<MediaAttachment>();
             if (message.DoesHaveAnImage())

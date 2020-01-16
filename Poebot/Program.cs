@@ -5,7 +5,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
 
-namespace Poebot
+namespace Bot
 {
     class Program
     {
@@ -19,7 +19,7 @@ namespace Poebot
             {
                 Poebot poebot = new Poebot(poewatch);
                 string query = Console.ReadLine();
-                if (query == string.Empty) continue;
+                if (string.IsNullOrEmpty(query)) continue;
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
                 Message message = poebot.ProcessRequest(query);
