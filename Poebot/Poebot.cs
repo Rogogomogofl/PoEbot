@@ -372,8 +372,8 @@ namespace Bot
                 }
                 else
                 {
-                    result = jo["name"].ToString();
-                    category = jo["category"].ToString();
+                    result = jo["name"].Value<string>();
+                    category = jo["category"].Value<string>();
                 }
 
                 switch (category)
@@ -405,6 +405,7 @@ namespace Bot
                         }
                     case "gem":
                         {
+                            if (jo["group"].Value<string>() == "support") return new Message("Камни поддержки не поддерживаются этой командой");
                             skills.Add(result);
                             break;
                         }

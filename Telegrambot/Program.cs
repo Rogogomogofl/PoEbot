@@ -41,11 +41,12 @@ namespace Telegrambot
             rssUpdate.AutoReset = true;
             rssUpdate.Enabled = true;
 
-            var proxy = new HttpToSocks5Proxy("124.41.211.78", 42807)
+            var proxy = new HttpToSocks5Proxy("103.111.183.18",1080)
             {
                 ResolveHostnamesLocally = true
             };
             telegramBot = new TelegramBotClient(File.ReadAllText("bot/telegramtoken.txt"), proxy);
+            //var result = telegramBot.GetMeAsync().Result;
             telegramBot.OnMessage += TelegramBot_OnMessage;
             telegramBot.StartReceiving();
             Console.WriteLine("Working");
