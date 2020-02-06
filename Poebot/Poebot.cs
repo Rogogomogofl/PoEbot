@@ -182,7 +182,7 @@ namespace Bot
             srch = srch.ToLower();
 
             string links = Regex.Match(Regex.Match(srch, @"(5l|6l)").ToString(), @"\d").ToString();
-            srch = srch.Replace("6l", "").Replace("5l", "").TrimEnd(' ');
+            srch = srch.Replace("6l", "").Replace("5l", "");
 
             string league = poewatch.DefaultLeague;
             if (srch.IndexOf('|') > 0)
@@ -202,7 +202,7 @@ namespace Bot
                     leagues += el["name"].Value<string>() + "\n";
                 try
                 {
-                    var ln = srch.Substring(srch.IndexOf('|') + 1).TrimEnd(' ').TrimStart(' ');
+                    var ln = srch.Substring(srch.IndexOf('|') + 1).Trim(' ');
                     if (string.IsNullOrEmpty(ln))
                         throw new Exception();
                     srch = srch.Substring(0, srch.IndexOf('|') - 1);
@@ -214,6 +214,8 @@ namespace Bot
                     return new Message("Некорректный ключ лиги. Список доступных лиг:\n" + leagues);
                 }
             }
+
+            srch = srch.Trim(' ');
 
             string pattern = srch.Replace("the ", @"the\s");
             Regex regex = new Regex(@"^" + pattern.Replace(" ", @"\D*\s\D*") + @"\D*");
@@ -243,8 +245,12 @@ namespace Bot
             if (name == "Skin of the Lords" || name == "Skin of the Loyal" || name == "Tabula Rasa" || name == "Shadowstitch") //Все 6л по умолчанию сюда
                 jo = poewatch.FirstOrDefault(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())) && o["linkCount"].Value<int>() == 6);
 
-
-            string poetrade = "http://poe.trade/search?league=" + league.Replace(' ', '+') + "&online=x&name=" + name.Replace(' ', '+') + (!string.IsNullOrEmpty(links) ? "&link_min=" + links : "")/* + (corrupted ? "&corrupted=1" : "")*/;
+            //string tradelink = "http://poe.trade/search?league=" + league.Replace(' ', '+') + "&online=x&name=" + name.Replace(' ', '+') + (!string.IsNullOrEmpty(links) ? "&link_min=" + links : "")/* + (corrupted ? "&corrupted=1" : "")*/;
+            var linksquery = "\"filters\":{\"type_filters\":{\"filters\":{}},\"socket_filters\":{\"filters\":{\"links\":{\"min\":" + links + ",\"max\":" + links + "}}}},";
+            var tradelink = "https://www.pathofexile.com/api/trade/search/" + league + "?redirect&source={\"query\":{" + (string.IsNullOrEmpty(links) ? string.Empty : linksquery) + "\"name\":\"" + name + "\"}}";
+            HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(tradelink);
+            HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
+            tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
 
             JArray history;
             lock (requestLocker)
@@ -323,7 +329,7 @@ namespace Bot
                 "Цены на " + name + (!string.IsNullOrEmpty(links) ? " " + links + "L" : "") + " (лига " + league + ")"
                 + "\nМинимальная: " + Regex.Match((string)jo["min"], @"\d+[.]?\d{0,2}").ToString() + "c"
                 + "\nСредняя: " + Regex.Match((string)jo["median"], @"\d+[.]?\d{0,2}").ToString() + "c"
-                + " (" + Regex.Match((string)jo["exalted"], @"\d+[.]?\d{0,2}").ToString() + "ex)\nСсылка на трейд: " + poetrade,
+                + " (" + Regex.Match((string)jo["exalted"], @"\d+[.]?\d{0,2}").ToString() + "ex)\nСсылка на трейд: " + tradelink,
                 plotBytes
             );
         }
