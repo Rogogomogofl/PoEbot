@@ -101,7 +101,7 @@ namespace Vkbot
             sw.Start();
             string request;
             if (!string.IsNullOrEmpty(ms.Message.Text)) request = ms.Message.Text;
-            else if (ms.Message.Attachments.Count != 0 && ms.Message.Attachments[0].Type.Name == "Link") request = ms.Message.Attachments[0].Instance.ToString();
+            else if (ms.Message.Attachments.Any() && ms.Message.Attachments[0].Type.Name == "Link") request = ms.Message.Attachments[0].Instance.ToString();
             else return;
 
             if (request.Contains("/sub ")) request += $"+{ms.Message.PeerId.ToString()}+{subPath}";
@@ -157,7 +157,7 @@ namespace Vkbot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e}");
+                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                     return;
                 }
             }
@@ -238,8 +238,13 @@ namespace Vkbot
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now}: {ex}");
+                Console.WriteLine($"{DateTime.Now}: {ex.Message} at {GetType()}");
             }
+        }
+
+        public new static Type GetType()
+        {
+            return typeof(Program);
         }
 
         private static void Log(string request, string responce, string time)

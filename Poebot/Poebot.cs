@@ -71,7 +71,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e}");
+                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                 return string.Empty;
             }
             if (result[3].Any())
@@ -194,7 +194,7 @@ namespace Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e}");
+                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                     return new Message("В данный момент сервер с базой данных недоступен");
                 }
                 string leagues = "";
@@ -233,7 +233,7 @@ namespace Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e}");
+                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                     return new Message("В данный момент сервер с базой данных недоступен");
                 }
                 ja = jo["leagues"].Value<JArray>();
@@ -261,7 +261,7 @@ namespace Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e}");
+                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                     return new Message("В данный момент сервер с базой данных недоступен");
                 }
             }
@@ -274,7 +274,7 @@ namespace Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e}");
+                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                     return new Message("В данный момент сервер с базой данных недоступен");
                 }
             }
@@ -473,7 +473,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e}"); return ("", "В данный момент сервер с базой данных недоступен");
+                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}"); return ("", "В данный момент сервер с базой данных недоступен");
             }
             if (result[3].Any())
             {
@@ -532,7 +532,7 @@ namespace Bot
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine($"{DateTime.Now}: {e}");
+                        Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                         return new Message("Не удалось вывести изображение этой статьи");
                     }
                 }
@@ -572,7 +572,7 @@ namespace Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e}");
+                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                     return new Message("В данный момент сервис недоступен");
                 }
             }
@@ -653,7 +653,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e}");
+                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                 return new Message("В данный момент сервер с базой данных недоступен");
             }
             string account;
@@ -679,7 +679,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e}");
+                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                 return new Message("В данный момент сервер с базой данных недоступен");
             }
             if (ja.Count == 0)
@@ -702,7 +702,7 @@ namespace Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e}");
+                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                     return new Message("Ошибка подписки, попробуйте повторить позже");
                 }
                 string thisSub = subs.FirstOrDefault(x => Regex.IsMatch(x, parameters[1] + " " + parameters[0]));
@@ -728,7 +728,7 @@ namespace Bot
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine($"{DateTime.Now}: {e}");
+                        Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                         return new Message("Ошибка подписки, попробуйте повторить позже");
                     }
                 }
@@ -758,7 +758,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e}");
+                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                 return null;
             }
         }
@@ -786,7 +786,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e}");
+                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                 return null;
             }
         }

@@ -153,8 +153,13 @@ namespace Telegrambot
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now}: {ex}");
+                Console.WriteLine($"{DateTime.Now}: {ex.Message} at {GetType()}");
             }
+        }
+
+        public new static Type GetType()
+        {
+            return typeof(Program);
         }
 
         private static void Log(string request, string responce, string time)

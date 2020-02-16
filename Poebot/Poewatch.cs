@@ -93,7 +93,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e}");
+                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
             }
             try
             {
@@ -106,7 +106,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e}");
+                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
                 updateTimer.Interval = 5000;
             }
         }
