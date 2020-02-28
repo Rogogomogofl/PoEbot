@@ -1,12 +1,13 @@
 ﻿using HtmlAgilityPack;
 using Newtonsoft.Json.Linq;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.WindowsForms;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -501,33 +502,30 @@ namespace Bot
             string url = wiki.url;
             string name = wiki.name;
             if (string.IsNullOrEmpty(name)) return new Message(text: url);
-            using (var memstream = new MemoryStream())
+
+            lock (screenshotLocker)
             {
-                lock (screenshotLocker)
+                ChromeOptions options = new ChromeOptions();
+                options.AddArgument("--headless");
+                options.AddArgument("--window-size=1000,2000");
+                options.PageLoadStrategy = PageLoadStrategy.None;
+                //using (ChromeDriver driver = new ChromeDriver("/usr/bin", options)) //for linux
+                using (ChromeDriver driver = new ChromeDriver(options)) //for windows
                 {
                     try
                     {
-                        url = url.Replace("'", "%27");
-                        Process.Start("/bin/bash", "-c \"" + $"cutycapt --url={url} --out=image.bmp" + "\"").WaitForExit();
-                        using (Bitmap bmp = new Bitmap("image.bmp"))
+                        driver.Navigate().GoToUrl(url);
+                        System.Threading.Thread.Sleep(3000);
+                        var bytes = driver.GetScreenshot().AsByteArray;
+                        IWebElement element = driver.FindElementByCssSelector(".infobox-page-container");
+                        using (Bitmap screenshot = new Bitmap(new MemoryStream(bytes)))
                         {
-                            Color clr;
-                            int x = bmp.Width - 150, y = 300, height = 0, wigth = 0;
-                            for (; y < bmp.Height; y++)
+                            Rectangle croppedImage = new Rectangle(element.Location.X, element.Location.Y, element.Size.Width, element.Size.Height);
+                            using (MemoryStream memoryStream = new MemoryStream())
                             {
-                                clr = bmp.GetPixel(x, y);
-                                if (clr == Color.FromArgb(255, 0, 0, 0))
-                                {
-                                    y--;
-                                    Color borderClr = bmp.GetPixel(x, y);
-                                    while (bmp.GetPixel(x - 1, y) == borderClr) x--;
-                                    while (bmp.GetPixel(x + wigth, y) == borderClr) wigth++;
-                                    while (bmp.GetPixel(x, y + height) == borderClr) height++;
-                                    break;
-                                }
+                                screenshot.Clone(croppedImage, screenshot.PixelFormat).Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
+                                return new Message(image: memoryStream.ToArray(), sysInfo: name.Replace(' ', '-').Replace("'", "").ToLower());
                             }
-                            Rectangle corp = new Rectangle(x, y, wigth, height);
-                            bmp.Clone(corp, bmp.PixelFormat).Save(memstream, System.Drawing.Imaging.ImageFormat.Png);
                         }
                     }
                     catch (Exception e)
@@ -536,7 +534,6 @@ namespace Bot
                         return new Message("Не удалось вывести изображение этой статьи");
                     }
                 }
-                return new Message(image: memstream.ToArray(), sysInfo: name.Replace(' ', '-').Replace("'", "").ToLower());
             }
         }
 

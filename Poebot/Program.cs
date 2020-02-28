@@ -24,7 +24,7 @@ namespace Bot
             rssUpdate = new Timer(10 * 1000);
             rssUpdate.Elapsed += UpdateRss;
             rssUpdate.AutoReset = true;
-            rssUpdate.Enabled = true;
+            //rssUpdate.Enabled = true;
 
             Poewatch poewatch = new Poewatch();
             Console.WriteLine("Working");
