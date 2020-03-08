@@ -26,11 +26,12 @@ namespace Bot
         private readonly object screenshotLocker = new object();
         private readonly Poewatch poewatch;
 
-        public Poebot(Poewatch poewatch, bool russianLang = true)
+        public Poebot(Poewatch poewatch, string language = "ru")
         {
             this.poewatch = poewatch;
         }
 
+        #region внешние методы
         public Message ProcessRequest(string request)
         {
             if (!poewatch.IsDataLoaded())
@@ -88,6 +89,7 @@ namespace Bot
                 else return string.Empty;
             }
         }
+        #endregion
 
         #region специальные внутренние методы
         private JArray WikiOpensearch(string search, bool russianLang = false)
@@ -108,7 +110,7 @@ namespace Bot
                     }
                 case "w":
                     {
-                        return new Message(text: WikiSearch(param).url);
+                        return new Message(text: ItemSearch(param).url);
                     }
                 case "p":
                     {
@@ -249,9 +251,19 @@ namespace Bot
             //string tradelink = "http://poe.trade/search?league=" + league.Replace(' ', '+') + "&online=x&name=" + name.Replace(' ', '+') + (!string.IsNullOrEmpty(links) ? "&link_min=" + links : "")/* + (corrupted ? "&corrupted=1" : "")*/;
             var linksquery = "\"filters\":{\"type_filters\":{\"filters\":{}},\"socket_filters\":{\"filters\":{\"links\":{\"min\":" + links + ",\"max\":" + links + "}}}},";
             var tradelink = "https://www.pathofexile.com/api/trade/search/" + league + "?redirect&source={\"query\":{" + (string.IsNullOrEmpty(links) ? string.Empty : linksquery) + "\"name\":\"" + name + "\"}}";
-            HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(tradelink);
-            HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
-            tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
+            try
+            {
+                HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(tradelink);
+                HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
+                tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
+            }
+            catch
+            {
+                tradelink = tradelink.Replace("name", "type");
+                HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(tradelink);
+                HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
+                tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
+            }
 
             JArray history;
             lock (requestLocker)
@@ -463,7 +475,7 @@ namespace Bot
             return new Message(fstRetStr.Substring(0, fstRetStr.Length - 2) + sndRetStr);
         }
 
-        private (string name, string url) WikiSearch(string search)
+        private (string name, string url) ItemSearch(string search)
         {
             search = search.ToLower();
             string name, url;
@@ -498,7 +510,7 @@ namespace Bot
 
         private Message WikiScreenshot(string search)
         {
-            var wiki = WikiSearch(search);
+            var wiki = ItemSearch(search);
             string url = wiki.url;
             string name = wiki.name;
             if (string.IsNullOrEmpty(name)) return new Message(text: url);
@@ -506,21 +518,27 @@ namespace Bot
             lock (screenshotLocker)
             {
                 ChromeOptions options = new ChromeOptions();
-                options.AddArgument("--headless");
-                options.AddArgument("--window-size=1000,2000");
+                options.AddArgument("enable-automation");
+                options.AddArgument("headless");
+                options.AddArgument("no-sandbox");
+                options.AddArgument("disable-infobars");
+                options.AddArgument("disable-dev-shm-usage");
+                options.AddArgument("disable-browser-side-navigation");
+                options.AddArgument("disable-gpu");
+                options.AddArgument("window-size=1000,2000");
                 options.PageLoadStrategy = PageLoadStrategy.None;
-                //using (ChromeDriver driver = new ChromeDriver("/usr/bin", options)) //for linux
-                using (ChromeDriver driver = new ChromeDriver(options)) //for windows
+                using (ChromeDriver driver = new ChromeDriver("/usr/bin", options)) //for linux
+                //using (ChromeDriver driver = new ChromeDriver(options)) //for windows
                 {
                     try
                     {
                         driver.Navigate().GoToUrl(url);
-                        System.Threading.Thread.Sleep(3000);
+                        System.Threading.Thread.Sleep(4000);
                         var bytes = driver.GetScreenshot().AsByteArray;
                         IWebElement element = driver.FindElementByCssSelector(".infobox-page-container");
                         using (Bitmap screenshot = new Bitmap(new MemoryStream(bytes)))
                         {
-                            Rectangle croppedImage = new Rectangle(element.Location.X, element.Location.Y, element.Size.Width, element.Size.Height);
+                            Rectangle croppedImage = new Rectangle(element.Location.X, element.Location.Y - 50, element.Size.Width, element.Size.Height);
                             using (MemoryStream memoryStream = new MemoryStream())
                             {
                                 screenshot.Clone(croppedImage, screenshot.PixelFormat).Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
@@ -737,7 +755,7 @@ namespace Bot
         }
         #endregion
 
-        #region методы автоответа на ссылки
+        #region методы автоответа
         private Message SendRedditImage(string url)
         {
             try

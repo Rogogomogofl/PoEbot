@@ -19,7 +19,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine($"{DateTime.Now}: {e.Message} at Bot.Common.GetContent");
             }
             return output;
         }
