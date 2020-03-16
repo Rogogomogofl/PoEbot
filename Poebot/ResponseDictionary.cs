@@ -14,7 +14,7 @@ namespace Bot
             {
                 case "ru":
                     {
-                        return "";
+                        return "В данный момент сервер с базой данных недоступен";
                     }
                 case "en":
                     {

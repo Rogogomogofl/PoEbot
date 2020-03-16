@@ -126,7 +126,7 @@ namespace Bot
                     }
                 case "b":
                     {
-                        return PoeNinjaBuilds(param);
+                        return PoeninjaBuilds(param);
                     }
                 case "err":
                     {
@@ -259,7 +259,7 @@ namespace Bot
             }
             catch
             {
-                tradelink = tradelink.Replace("name", "type");
+                tradelink = "https://www.pathofexile.com/api/trade/search/" + league + "?redirect&source={\"query\":{\"type\":\"" + name + "\"}}";
                 HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(tradelink);
                 HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
                 tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
@@ -358,7 +358,7 @@ namespace Bot
             return new Message("Возможно вы искали:\n" + string.Join("\n", searchResults));
         }
 
-        private Message PoeNinjaBuilds(string srch)
+        private Message PoeninjaBuilds(string srch)
         {
             List<string> items = new List<string>();
             while (srch.IndexOf('+') > 0)
@@ -375,7 +375,7 @@ namespace Bot
             {
                 Regex regex = new Regex(@"^" + item.Replace(" ", @"\D*") + @"\D*");
                 Regex theRegex = new Regex(@"^the " + item.Replace(" ", @"\D*") + @"\D*");
-                JObject jo = poewatch.FirstOrDefault(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())));
+                JObject jo = poewatch.FirstOrDefault(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())) && o["category"].Value<string>() != "enchantment");
                 string result, category;
                 if (jo == null)
                 {
@@ -535,7 +535,15 @@ namespace Bot
                         driver.Navigate().GoToUrl(url);
                         System.Threading.Thread.Sleep(4000);
                         var bytes = driver.GetScreenshot().AsByteArray;
-                        IWebElement element = driver.FindElementByCssSelector(".infobox-page-container");
+                        IWebElement element;
+                        if (poewatch.FirstOrDefault(o => o["name"].Value<string>() == name) != null)
+                        {
+                            element = driver.FindElementByCssSelector(".infobox-page-container");
+                        }
+                        else
+                        {
+                            element = driver.FindElementByCssSelector(".infocard");
+                        }
                         using (Bitmap screenshot = new Bitmap(new MemoryStream(bytes)))
                         {
                             Rectangle croppedImage = new Rectangle(element.Location.X, element.Location.Y - 50, element.Size.Width, element.Size.Height);
