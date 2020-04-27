@@ -104,7 +104,7 @@ namespace Vkbot
             else if (ms.Message.Attachments.Any() && ms.Message.Attachments[0].Type.Name == "Link") request = ms.Message.Attachments[0].Instance.ToString();
             else return;
 
-            if (request.Contains("/sub ")) request += $"+{ms.Message.PeerId.ToString()}+{subPath}";
+            if (request.Contains("/sub ")) request += $"+{ms.Message.PeerId}+{subPath}";
             if (request.Contains("/i "))
             {
                 string item = poebot.GetItemName(Regex.Split(request, @"/i ")[1]);

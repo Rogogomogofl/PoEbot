@@ -82,8 +82,8 @@ namespace Bot
             }
             else
             {
-                Regex regex = new Regex(@"^" + search.Replace(" ", @"\D*") + @"\D*");
-                Regex theRegex = new Regex(@"^the " + search.Replace(" ", @"\D*") + @"\D*");
+                Regex regex = new Regex($@"^{search.Replace(" ", @"\D*")}\D*");
+                Regex theRegex = new Regex($@"^the {search.Replace(" ", @"\D*")}\D*");
                 var item = poewatch.FirstOrDefault(o => regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower()));
                 if (item != null) return item["name"].Value<string>();
                 else return string.Empty;
@@ -94,7 +94,7 @@ namespace Bot
         #region специальные внутренние методы
         private JArray WikiOpensearch(string search, bool russianLang = false)
         {
-            return JArray.Parse(Common.GetContent("https://pathofexile" + (russianLang ? "-ru" : "") + ".gamepedia.com/api.php?action=opensearch&search=" + search.Replace(' ', '+')));
+            return JArray.Parse(Common.GetContent($"https://pathofexile{(russianLang ? "-ru" : "")}.gamepedia.com/api.php?action=opensearch&search={search.Replace(' ', '+')}"));
         }
         #endregion
 
@@ -209,7 +209,7 @@ namespace Bot
                     if (string.IsNullOrEmpty(ln))
                         throw new Exception();
                     srch = srch.Substring(0, srch.IndexOf('|') - 1);
-                    Regex lreg = new Regex(@"^" + ln.Replace(" ", @"\S*\s?") + @"\S*");
+                    Regex lreg = new Regex($@"^{ln.Replace(" ", @"\S*\s?")}\S*");
                     league = leaguesja.FirstOrDefault(o => lreg.IsMatch(o["name"].Value<string>().ToLower()))["name"].Value<string>();
                 }
                 catch
@@ -221,13 +221,16 @@ namespace Bot
             srch = srch.Trim(' ');
 
             string pattern = srch.Replace("the ", @"the\s");
-            Regex regex = new Regex(@"^" + pattern.Replace(" ", @"\D*\s\D*") + @"\D*");
-            Regex theRegex = new Regex(@"^the " + pattern.Replace(" ", @"\D*\s\D*") + @"\D*");
+            Regex regex = new Regex($@"^{pattern.Replace(" ", @"\D*\s\D*")}\D*");
+            Regex theRegex = new Regex($@"^the {pattern.Replace(" ", @"\D*\s\D*")}\D*");
             JObject jo = new JObject();
             JArray ja;
 
-            var tmp = poewatch.Where(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())) && o["linkCount"]?.Value<string>() == (string.IsNullOrEmpty(links) ? null : links) && (o["variation"] == null || o["variation"].Value<string>() == "1 socket") && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
-            if (!tmp?.Any() ?? true) return new Message("По запросу \"" + srch + "\"" + (!string.IsNullOrEmpty(links) ? " " + links + "L" : "") + " не удалось получить данные о ценах");
+            var tmp = poewatch.Where(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower()))
+                                            && o["linkCount"]?.Value<string>() == (string.IsNullOrEmpty(links) ? null : links)
+                                            && (o["variation"] == null || o["variation"].Value<string>() == "1 socket")
+                                            && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
+            if (!tmp?.Any() ?? true) return new Message($"По запросу \"{srch}\"{(!string.IsNullOrEmpty(links) ? " " + links + "L" : "")} не удалось получить данные о ценах");
             foreach (var token in tmp)
             {
                 try
@@ -294,7 +297,7 @@ namespace Bot
 
             ja = JArray.Parse(jo["leagues"].ToString());
             jo = ja.Children<JObject>().FirstOrDefault(o => o["name"].Value<string>() == league);
-            if (jo == null) return new Message("О предмете " + name + " на лиге " + league + " нет данных о цене");
+            if (jo == null) return new Message($"О предмете {name} на лиге {league} нет данных о цене");
 
             byte[] plotBytes = null;
             if (history.Count != 0)
@@ -339,10 +342,10 @@ namespace Bot
             }
             return new Message
             (
-                "Цены на " + name + (!string.IsNullOrEmpty(links) ? " " + links + "L" : "") + " (лига " + league + ")"
-                + "\nМинимальная: " + Regex.Match((string)jo["min"], @"\d+[.]?\d{0,2}").ToString() + "c"
-                + "\nСредняя: " + Regex.Match((string)jo["median"], @"\d+[.]?\d{0,2}").ToString() + "c"
-                + " (" + Regex.Match((string)jo["exalted"], @"\d+[.]?\d{0,2}").ToString() + "ex)\nСсылка на трейд: " + tradelink,
+                $"Цены на {name} {(!string.IsNullOrEmpty(links) ? " " + links + "L" : "")} (лига {league})"
+                + $"\nМинимальная: {Regex.Match((string)jo["min"], @"\d+[.]?\d{0,2}")}c"
+                + $"\nСредняя: {Regex.Match((string)jo["median"], @"\d+[.]?\d{0,2}")}c"
+                + $" ({Regex.Match((string)jo["exalted"], @"\d+[.]?\d{0,2}")}ex)\nСсылка на трейд: {tradelink}",
                 plotBytes
             );
         }
@@ -351,11 +354,12 @@ namespace Bot
         {
             string pattern = req.Replace("the ", @"the\s");
             Regex regex = new Regex(pattern.Replace(" ", @"\D*\s\D*") + @"\D*");
-            var items = poewatch.Where(o => regex.IsMatch(o["name"].Value<string>().ToLower()) && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
+            var items = poewatch.Where(o => regex.IsMatch(o["name"].Value<string>().ToLower())
+                                            && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
             var searchResults = items.Select(o => o["name"].Value<string>()).Distinct();
             if (searchResults.Count() > 30) return new Message("Найдено слишком много возможных вариантов. Уточните запрос");
-            if (!searchResults.Any()) return new Message("По запросу " + req + " ничего не найдено");
-            return new Message("Возможно вы искали:\n" + string.Join("\n", searchResults));
+            if (!searchResults.Any()) return new Message($"По запросу {req} ничего не найдено");
+            return new Message($"Возможно вы искали:\n{string.Join("\n", searchResults)}");
         }
 
         private Message PoeninjaBuilds(string srch)
@@ -373,9 +377,10 @@ namespace Bot
             List<string> keystones = new List<string>();
             foreach (var item in items)
             {
-                Regex regex = new Regex(@"^" + item.Replace(" ", @"\D*") + @"\D*");
-                Regex theRegex = new Regex(@"^the " + item.Replace(" ", @"\D*") + @"\D*");
-                JObject jo = poewatch.FirstOrDefault(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())) && o["category"].Value<string>() != "enchantment");
+                Regex regex = new Regex($@"^{item.Replace(" ", @"\D*")}\D*");
+                Regex theRegex = new Regex($@"^the {item.Replace(" ", @"\D*")}\D*");
+                JObject jo = poewatch.FirstOrDefault(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower()))
+                                                        && o["category"].Value<string>() != "enchantment");
                 string result, category;
                 if (jo == null)
                 {
@@ -385,7 +390,7 @@ namespace Bot
                     }
                     catch
                     {
-                        return new Message("Не удалось определить \"" + item + "\"");
+                        return new Message($"Не удалось определить \"{item}\"");
                     }
                     category = "keystone";
                 }
@@ -486,7 +491,8 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}"); return ("", "В данный момент сервер с базой данных недоступен");
+                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
+                return ("", "В данный момент сервер с базой данных недоступен");
             }
             if (result[3].Any())
             {
@@ -495,15 +501,15 @@ namespace Bot
             }
             else
             {
-                Regex regex = new Regex(@"^" + search.Replace(" ", @"\D*") + @"\D*");
-                Regex theRegex = new Regex(@"^the " + search.Replace(" ", @"\D*") + @"\D*");
+                Regex regex = new Regex($@"^{search.Replace(" ", @"\D*")}\D*");
+                Regex theRegex = new Regex($@"^the {search.Replace(" ", @"\D*")}\D*");
                 JObject item = poewatch.FirstOrDefault(o => (regex.IsMatch(o["name"].Value<string>().ToLower()) || theRegex.IsMatch(o["name"].Value<string>().ToLower())));
                 if (item != null)
                 {
                     name = item["name"].Value<string>();
-                    url = "https://pathofexile.gamepedia.com/" + name.Replace(' ', '_');
+                    url = $"https://pathofexile.gamepedia.com/{name.Replace(' ', '_')}";
                 }
-                else return ("", "По запросу \"" + search + "\" ничего не найдено");
+                else return ("", $"По запросу \"{search}\" ничего не найдено");
             }
             return (name, url);
         }
@@ -586,8 +592,7 @@ namespace Bot
             using (var wc = new WebClient())
             {
                 DateTime date1 = DateTime.Today;
-                var layouturl = "https://www.poelab.com/wp-content/labfiles/"
-                    + date1.Year + "-" + string.Format("{0:00}", date1.Month) + "-" + string.Format("{0:00}", date1.Day) + "_" + search + ".jpg";
+                var layouturl = "https://www.poelab.com/wp-content/labfiles/" + $"{date1.Year}-{string.Format("{0:00}", date1.Month) + "-" + string.Format("{0:00}", date1.Day)}_{search}.jpg";
                 try
                 {
                     byte[] data = wc.DownloadData(layouturl);
@@ -603,7 +608,7 @@ namespace Bot
 
         private Message LeagueHint(string request)
         {
-            string hint = hints.FirstOrDefault(o => Regex.IsMatch(o, @"^" + request.ToLower()));
+            string hint = hints.FirstOrDefault(o => Regex.IsMatch(o, $@"^{request.ToLower()}"));
             switch (hint)
             {
                 case "delve":
@@ -625,8 +630,7 @@ namespace Bot
                     }*/
                 default:
                     {
-                        return new Message("Не удалось вывести подсказку по запросу " + request +
-                            "\nПодсказки доступны по запросам: " + string.Join(", ", hints));
+                        return new Message($"Не удалось вывести подсказку по запросу {request}\nПодсказки доступны по запросам: {string.Join(", ", hints)}");
                     }
             }
         }
@@ -635,7 +639,7 @@ namespace Bot
         {
             string formatHint = "Формат сообщения: category [quantity] [group]\nПо умолчанию quantity = 10, группы все";
             var split = request.Split(' ');
-            if (!Poewatch.TradeCategories.Contains(split[0])) return new Message("Некорректная категория. Список доступных категорий:\n" + string.Join("\n", Poewatch.TradeCategories));
+            if (!Poewatch.TradeCategories.Contains(split[0])) return new Message($"Некорректная категория. Список доступных категорий:\n{string.Join("\n", Poewatch.TradeCategories)}");
             int num = 10;
             string group = "";
             switch (split.Length)
@@ -662,9 +666,12 @@ namespace Bot
             if (num < 1) return new Message(formatHint);
             JArray ja = poewatch.Get(split[0]);
             if (ja == null || ja.Count == 0) return new Message("Не удалось получить данные о ценах");
-            var results = ja.Children<JObject>().Where(o => (!string.IsNullOrEmpty(group) ? o["group"].Value<string>() == group : true) && (split[0] == "gem" ? (o["gemLevel"].Value<int>() == 20 && (string)o["gemQuality"] == "20" && o["gemIsCorrupted"].Value<bool>() == false) : true) && o["linkCount"]?.Value<string>() == null);
-            if (!results.Any()) return new Message("Неверно задана группа. Список доступных групп для данной категории:\n" + string.Join("\n", ja.Children<JObject>().Select(o => o["group"].ToString()).Distinct()));
-            return new Message("Топ " + num + " предметов по цене в категории " + split[0] + (!string.IsNullOrEmpty(group) ? " группы " + group + " " : "") + ":\n" + string.Join("\n", results.ToList().GetRange(0, num > results.Count() ? results.Count() : num).Select(o => Regex.Match(o["median"].Value<string>(), @"\d+[.]?\d{0,2}") + "c - " + o["name"].Value<string>())));
+            var results = ja.Children<JObject>().Where(o => (!string.IsNullOrEmpty(group) ? o["group"].Value<string>() == group : true)
+                                                        && (split[0] == "gem" ? (o["gemLevel"].Value<int>() == 20 && (string)o["gemQuality"] == "20" && o["gemIsCorrupted"].Value<bool>() == false) : true)
+                                                        && o["linkCount"]?.Value<string>() == null);
+            if (!results.Any()) return new Message($"Неверно задана группа. Список доступных групп для данной категории:\n{string.Join("\n", ja.Children<JObject>().Select(o => o["group"].ToString()).Distinct())}");
+            return new Message($"Топ {num} предметов по цене в категории {split[0]}{(!string.IsNullOrEmpty(group) ? " группы " + group + " " : "")}:"
+                + $"\n{string.Join("\n", results.ToList().GetRange(0, num > results.Count() ? results.Count() : num).Select(o => $"{Regex.Match(o["median"].Value<string>(), @"\d+[.]?\d{0,2}")}c - {o["name"].Value<string>()}"))}");
         }
 
         private Message GetCharInfo(string charName)
@@ -690,7 +697,7 @@ namespace Bot
             }
             ja = Poewatch.Characters(account);
             charName = ja.FirstOrDefault(o => o["character"].Value<string>().ToLower() == charName.ToLower())["character"].Value<string>();
-            return new Message("http://poe-profile.info/profile/" + account + "/" + charName);
+            return new Message("http://poe-profile.info/profile/" + $"{account}/{charName}");
         }
 
         private Message GetCharList(string account)
@@ -709,8 +716,8 @@ namespace Bot
                 return new Message("Указанный профиль не найден");
             string chars = "";
             foreach (var jt in ja)
-                chars += "\n" + jt["character"].Value<string>() + " (лига: " + jt["league"].Value<string>() + ")";
-            return new Message("Список доступных для отображения персонажей профиля " + account + ":\n" + chars);
+                chars += $"\n{jt["character"].Value<string>()} (лига: {jt["league"].Value<string>()}";
+            return new Message($"Список доступных для отображения персонажей профиля {account}:\n{chars}");
         }
 
         private Message SubToRss(string prs)
@@ -735,7 +742,7 @@ namespace Bot
                     {
                         sw.WriteLine("{0} {1}", parameters[1], parameters[0]);
                     }
-                    return new Message("Эта беседа подписана на новости с " + (parameters[0] == "ru" ? "русского" : "английского") + " сайта игры");
+                    return new Message($"Эта беседа подписана на новости с {(parameters[0] == "ru" ? "русского" : "английского")} сайта игры");
                 }
                 else
                 {
@@ -747,7 +754,7 @@ namespace Bot
                             foreach (var line in subs)
                                 sw.WriteLine(line);
                         }
-                        return new Message("Эта беседа отписана от новостей с " + (parameters[0] == "ru" ? "русского" : "английского") + " сайта игры");
+                        return new Message($"Эта беседа отписана от новостей с {(parameters[0] == "ru" ? "русского" : "английского")} сайта игры");
                     }
                     catch (Exception e)
                     {
