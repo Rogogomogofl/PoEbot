@@ -10,6 +10,7 @@ using System.Net.Http.Headers;
 using System.ServiceModel.Syndication;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Xml;
@@ -19,6 +20,7 @@ using VkNet.Model;
 using VkNet.Model.Attachments;
 using VkNet.Model.GroupUpdate;
 using VkNet.Model.RequestParams;
+using Timer = System.Timers.Timer;
 
 namespace Vkbot
 {
@@ -44,9 +46,8 @@ namespace Vkbot
             rssUpdate.AutoReset = true;
             rssUpdate.Enabled = true;
 
-            Auth();
-            LongPollServerResponse serverResponse = vkapi.Groups.GetLongPollServer(groupId: 178558335);
-            string ts = serverResponse.Ts;
+            LongPollServerResponse serverResponse = null;
+            string ts = null;
 
             Console.WriteLine("Working");
 
@@ -54,13 +55,12 @@ namespace Vkbot
             {
                 if (!vkapi.IsAuthorized)
                 {
-                    Auth();
-                    serverResponse = vkapi.Groups.GetLongPollServer(groupId: 178558335);
+                    serverResponse = Auth();
                     ts = serverResponse.Ts;
                 }
                 try
                 {
-                    BotsLongPollHistoryResponse poll = vkapi.Groups.GetBotsLongPollHistory(
+                    var poll = vkapi.Groups.GetBotsLongPollHistory(
                             new BotsLongPollHistoryParams()
                             { Server = serverResponse.Server, Ts = ts, Key = serverResponse.Key, Wait = 1 });
                     ts = poll.Ts;
@@ -72,6 +72,7 @@ namespace Vkbot
                 }
                 catch
                 {
+                    Thread.Sleep(1000);
                     serverResponse = vkapi.Groups.GetLongPollServer(groupId: 178558335);
                     ts = serverResponse.Ts;
                 }
@@ -188,12 +189,26 @@ namespace Vkbot
             vkapi.Messages.Send(messagesParams);
         }
 
-        private static void Auth()
+        private static LongPollServerResponse Auth()
         {
-            vkapi.Authorize(new ApiAuthParams
+            while (!vkapi.IsAuthorized)
             {
-                AccessToken = File.ReadAllText("bot/vktoken.txt")
-            });
+                Console.WriteLine("Authorizing...");
+                try
+                {
+                    vkapi.Authorize(new ApiAuthParams
+                    {
+                        AccessToken = File.ReadAllText("bot/vktoken.txt")
+                    });
+                    return vkapi.Groups.GetLongPollServer(groupId: 178558335);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    Thread.Sleep(10000);
+                }
+            }
+            throw new Exception("UB");
         }
 
         private static void UpdateRss(object sender, ElapsedEventArgs e)
