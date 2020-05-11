@@ -24,27 +24,27 @@ using Timer = System.Timers.Timer;
 
 namespace Vkbot
 {
-    class Program
+    internal class Program
     {
-        const string cachePath = @"bot/vkcache.txt";
-        const string subPath = @"bot/vksub.txt";
-        const string logPath = @"bot/vklog.txt";
-        static readonly VkApi vkapi = new VkApi();
-        static readonly Poewatch poewatch = new Poewatch();
-        static SyndicationItem lastEn, lastRu;
-        static Timer rssUpdate;
+        private const string CachePath = @"bot/vkcache.txt";
+        private const string SubPath = @"bot/vksub.txt";
+        private const string LogPath = @"bot/vklog.txt";
+        private static readonly VkApi Vkapi = new VkApi();
+        private static readonly Poewatch Poewatch = new Poewatch();
+        private static SyndicationItem _lastEn, _lastRu;
+        private static Timer _rssUpdate;
 
         private static void Main()
         {
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            if (!File.Exists(subPath)) File.Create(subPath).Close();
-            if (!File.Exists(cachePath)) File.Create(cachePath).Close();
+            if (!File.Exists(SubPath)) File.Create(SubPath).Close();
+            if (!File.Exists(CachePath)) File.Create(CachePath).Close();
 
-            rssUpdate = new Timer(5 * 60 * 1000);
-            rssUpdate.Elapsed += UpdateRss;
-            rssUpdate.AutoReset = true;
-            rssUpdate.Enabled = true;
+            _rssUpdate = new Timer(5 * 60 * 1000);
+            _rssUpdate.Elapsed += UpdateRss;
+            _rssUpdate.AutoReset = true;
+            _rssUpdate.Enabled = true;
 
             LongPollServerResponse serverResponse = null;
             string ts = null;
@@ -53,14 +53,14 @@ namespace Vkbot
 
             while (true)
             {
-                if (!vkapi.IsAuthorized)
+                if (!Vkapi.IsAuthorized)
                 {
                     serverResponse = Auth();
                     ts = serverResponse.Ts;
                 }
                 try
                 {
-                    var poll = vkapi.Groups.GetBotsLongPollHistory(
+                    var poll = Vkapi.Groups.GetBotsLongPollHistory(
                             new BotsLongPollHistoryParams()
                             { Server = serverResponse.Server, Ts = ts, Key = serverResponse.Key, Wait = 1 });
                     ts = poll.Ts;
@@ -73,7 +73,7 @@ namespace Vkbot
                 catch
                 {
                     Thread.Sleep(1000);
-                    serverResponse = vkapi.Groups.GetLongPollServer(groupId: 178558335);
+                    serverResponse = Vkapi.Groups.GetLongPollServer(groupId: 178558335);
                     ts = serverResponse.Ts;
                 }
 
@@ -97,7 +97,7 @@ namespace Vkbot
 
         private static void ProcessReqest(GroupUpdate ms)
         {
-            Poebot poebot = new Poebot(poewatch);
+            Poebot poebot = new Poebot(Poewatch);
             Stopwatch sw = new Stopwatch();
             sw.Start();
             string request;
@@ -105,14 +105,14 @@ namespace Vkbot
             else if (ms.Message.Attachments.Any() && ms.Message.Attachments[0].Type.Name == "Link") request = ms.Message.Attachments[0].Instance.ToString();
             else return;
 
-            if (request.Contains("/sub ")) request += $"+{ms.Message.PeerId}+{subPath}";
+            if (request.Contains("/sub ")) request += $"+{ms.Message.PeerId}+{SubPath}";
             if (request.Contains("/i "))
             {
                 string item = poebot.GetItemName(Regex.Split(request, @"/i ")[1]);
                 if (!string.IsNullOrEmpty(item))
                 {
                     item = item.ToLower().Replace(' ', '-').Replace("'", "");
-                    string[] lines = File.ReadAllLines(cachePath);
+                    string[] lines = File.ReadAllLines(CachePath);
                     foreach (string line in lines)
                     {
                         var data = line.Split(' ');
@@ -145,11 +145,11 @@ namespace Vkbot
             {
                 try
                 {
-                    var uploadServer = vkapi.Photo.GetMessagesUploadServer((long)ms.Message.PeerId);
-                    var photo = vkapi.Photo.SaveMessagesPhoto(UploadStream(uploadServer.UploadUrl, message.Image()));
+                    var uploadServer = Vkapi.Photo.GetMessagesUploadServer((long)ms.Message.PeerId);
+                    var photo = Vkapi.Photo.SaveMessagesPhoto(UploadStream(uploadServer.UploadUrl, message.Image()));
                     if (ms.Message.Text.Contains("/i "))
                     {
-                        using (StreamWriter stream = new StreamWriter(cachePath, true, Encoding.Default))
+                        using (StreamWriter stream = new StreamWriter(CachePath, true, Encoding.Default))
                         {
                             stream.WriteLine("{0} {1} {2}", message.SysInfo, photo[0].Id, photo[0].OwnerId);
                         }
@@ -186,21 +186,21 @@ namespace Vkbot
             Random random = new Random();
             if (messagesParams.Message != null && messagesParams.Message.Count() > 4096) messagesParams.Message = messagesParams.Message.Substring(0, 4096);
             messagesParams.RandomId = random.Next();
-            vkapi.Messages.Send(messagesParams);
+            Vkapi.Messages.Send(messagesParams);
         }
 
         private static LongPollServerResponse Auth()
         {
-            while (!vkapi.IsAuthorized)
+            while (!Vkapi.IsAuthorized)
             {
                 Console.WriteLine("Authorizing...");
                 try
                 {
-                    vkapi.Authorize(new ApiAuthParams
+                    Vkapi.Authorize(new ApiAuthParams
                     {
                         AccessToken = File.ReadAllText("bot/vktoken.txt")
                     });
-                    return vkapi.Groups.GetLongPollServer(groupId: 178558335);
+                    return Vkapi.Groups.GetLongPollServer(groupId: 178558335);
                 }
                 catch (Exception e)
                 {
@@ -215,20 +215,20 @@ namespace Vkbot
         {
             try
             {
-                List<string> subs = File.ReadAllLines(subPath).ToList();
+                List<string> subs = File.ReadAllLines(SubPath).ToList();
                 using (var r = XmlReader.Create("https://www.pathofexile.com/news/rss"))
                 {
                     var feed = SyndicationFeed.Load(r);
                     var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
-                    if (lastEn == null) lastEn = last;
-                    if (last.Links[0].Uri != lastEn.Links[0].Uri && last.PublishDate > lastEn.PublishDate)
+                    if (_lastEn == null) _lastEn = last;
+                    if (last.Links[0].Uri != _lastEn.Links[0].Uri && last.PublishDate > _lastEn.PublishDate)
                     {
-                        lastEn = last;
+                        _lastEn = last;
                         var enSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sen"));
                         foreach (var sub in enSubs)
                             SendMessage(new MessagesSendParams
                             {
-                                Message = lastEn.Title.Text + '\n' + lastEn.Links[0].Uri,
+                                Message = _lastEn.Title.Text + '\n' + _lastEn.Links[0].Uri,
                                 PeerId = long.Parse(sub.Split(' ')[0])
                             });
                     }
@@ -237,15 +237,15 @@ namespace Vkbot
                 {
                     var feed = SyndicationFeed.Load(r);
                     var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
-                    if (lastRu == null) lastRu = last;
-                    if (last.Links[0].Uri != lastRu.Links[0].Uri && last.PublishDate > lastRu.PublishDate)
+                    if (_lastRu == null) _lastRu = last;
+                    if (last.Links[0].Uri != _lastRu.Links[0].Uri && last.PublishDate > _lastRu.PublishDate)
                     {
-                        lastRu = last;
+                        _lastRu = last;
                         var ruSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sru"));
                         foreach (var sub in ruSubs)
                             SendMessage(new MessagesSendParams
                             {
-                                Message = lastRu.Title.Text + '\n' + lastRu.Links[0].Uri,
+                                Message = _lastRu.Title.Text + '\n' + _lastRu.Links[0].Uri,
                                 PeerId = long.Parse(sub.Split(' ')[0])
                             });
                     }
@@ -264,7 +264,7 @@ namespace Vkbot
 
         private static void Log(string request, string responce, string time)
         {
-            using (StreamWriter streamWriter = new StreamWriter(logPath, true, Encoding.Default))
+            using (StreamWriter streamWriter = new StreamWriter(LogPath, true, Encoding.Default))
             {
                 streamWriter.WriteLine($"{DateTime.Now}\nЗапрос:\n{request}\n\nОтвет:\n{responce}\nВремя ответа: {time}\n------------");
             }

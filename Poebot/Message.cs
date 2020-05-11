@@ -17,23 +17,23 @@
     public class Message
     {
         public string Text { get; }
-        private readonly byte[] _image;
+        private readonly byte[] image;
         public LoadedPhoto LoadedPhoto { get; }
         public string SysInfo { get; }
 
         public Message(string text = null, byte[] image = null, LoadedPhoto loadedPhoto = null, string sysInfo = "")
         {
             Text = text;
-            _image = image;
+            this.image = image;
             LoadedPhoto = loadedPhoto;
             SysInfo = sysInfo;
         }
 
         public byte[] Image()
         {
-            return _image;
+            return image;
         }
 
-        public bool DoesHaveAnImage() => _image != null;
+        public bool DoesHaveAnImage() => image != null;
     }
 }

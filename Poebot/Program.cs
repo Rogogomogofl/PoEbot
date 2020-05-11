@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -12,18 +11,18 @@ using System.Xml;
 
 namespace Bot
 {
-    class Program
+    internal class Program
     {
-        static Timer rssUpdate;
+        private static Timer _rssUpdate;
 
-        static void Main()
+        private static void Main()
         {
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-            rssUpdate = new Timer(10 * 1000);
-            rssUpdate.Elapsed += UpdateRss;
-            rssUpdate.AutoReset = true;
+            _rssUpdate = new Timer(10 * 1000);
+            _rssUpdate.Elapsed += UpdateRss;
+            _rssUpdate.AutoReset = true;
             //rssUpdate.Enabled = true;
 
             Poewatch poewatch = new Poewatch();

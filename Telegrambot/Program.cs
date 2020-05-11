@@ -16,39 +16,39 @@ using Telegram.Bot;
 
 namespace Telegrambot
 {
-    class Program
+    internal class Program
     {
-        static TelegramBotClient telegramBot;
-        const string subPath = @"bot/telegramsub.txt";
-        const string cachePath = @"bot/telegramcache.txt";
-        const string langPath = @"bot/telegramlang.txt";
-        const string logPath = @"bot/telegramlog.txt";
-        static readonly Poewatch poewatch = new Poewatch();
-        static SyndicationItem lastEn, lastRu;
-        static Timer rssUpdate;
+        private static TelegramBotClient _telegramBot;
+        private const string SubPath = @"bot/telegramsub.txt";
+        private const string CachePath = @"bot/telegramcache.txt";
+        private const string LangPath = @"bot/telegramlang.txt";
+        private const string LogPath = @"bot/telegramlog.txt";
+        private static readonly Poewatch Poewatch = new Poewatch();
+        private static SyndicationItem _lastEn, _lastRu;
+        private static Timer _rssUpdate;
 
-        static void Main()
+        private static void Main()
         {
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            if (!File.Exists(subPath)) File.Create(subPath).Close();
-            if (!File.Exists(cachePath)) File.Create(cachePath).Close();
-            if (!File.Exists(langPath)) File.Create(langPath).Close();
-            if (!File.Exists(logPath)) File.Create(logPath).Close();
+            if (!File.Exists(SubPath)) File.Create(SubPath).Close();
+            if (!File.Exists(CachePath)) File.Create(CachePath).Close();
+            if (!File.Exists(LangPath)) File.Create(LangPath).Close();
+            if (!File.Exists(LogPath)) File.Create(LogPath).Close();
 
-            rssUpdate = new Timer(5 * 60 * 1000);
-            rssUpdate.Elapsed += UpdateRss;
-            rssUpdate.AutoReset = true;
-            rssUpdate.Enabled = true;
+            _rssUpdate = new Timer(5 * 60 * 1000);
+            _rssUpdate.Elapsed += UpdateRss;
+            _rssUpdate.AutoReset = true;
+            _rssUpdate.Enabled = true;
 
             var proxy = new HttpToSocks5Proxy("103.111.183.18",1080)
             {
                 ResolveHostnamesLocally = true
             };
-            telegramBot = new TelegramBotClient(File.ReadAllText("bot/telegramtoken.txt"), proxy);
+            _telegramBot = new TelegramBotClient(File.ReadAllText("bot/telegramtoken.txt"), proxy);
             //var result = telegramBot.GetMeAsync().Result;
-            telegramBot.OnMessage += TelegramBot_OnMessage;
-            telegramBot.StartReceiving();
+            _telegramBot.OnMessage += TelegramBot_OnMessage;
+            _telegramBot.StartReceiving();
             Console.WriteLine("Working");
             while (true) ;
         }
@@ -67,26 +67,26 @@ namespace Telegrambot
                         if (sobaka[1] == "poeinfobot") e.Message.Text = sobaka[0];
                         else return;
                     }
-                    var chats = File.ReadAllLines(langPath);//to do
-                    Poebot poebot = new Poebot(poewatch);
+                    var chats = File.ReadAllLines(LangPath);//to do
+                    Poebot poebot = new Poebot(Poewatch);
                     Stopwatch sw = new Stopwatch();
                     sw.Start();
                     string request = e.Message.Text;
-                    if (request.Contains("/sub ")) request += "+" + e.Message.Chat.Id + "+" + subPath;
+                    if (request.Contains("/sub ")) request += "+" + e.Message.Chat.Id + "+" + SubPath;
                     if (request.Contains("/i "))
                     {
                         string item = poebot.GetItemName(Regex.Split(request, @"/i ")[1]);
                         if (!string.IsNullOrEmpty(item))
                         {
                             item = item.ToLower().Replace(' ', '-').Replace("'", "");
-                            string[] lines = File.ReadAllLines(cachePath);
+                            string[] lines = File.ReadAllLines(CachePath);
                             foreach (string line in lines)
                             {
                                 var data = line.Split(' ');
                                 if (data[0] == item)
                                 {
                                     sw.Stop();
-                                    telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: data[1]);
+                                    _telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: data[1]);
                                     Log(request, "", sw.ElapsedMilliseconds.ToString());
                                     return;
                                 }
@@ -95,22 +95,22 @@ namespace Telegrambot
                     }
                     Message message = poebot.ProcessRequest(request);
                     if (message == null) return;
-                    if (message.Text != null) telegramBot.SendTextMessageAsync(chatId: e.Message.Chat.Id, text: message.Text);
+                    if (message.Text != null) _telegramBot.SendTextMessageAsync(chatId: e.Message.Chat.Id, text: message.Text);
                     if (message.DoesHaveAnImage())
                     {
                         using (MemoryStream stream = new MemoryStream(message.Image()))
                         {
-                            var returnedMessage = telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: stream).Result;
+                            var returnedMessage = _telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: stream).Result;
                             if (request.Contains("/i "))
                             {
-                                using (StreamWriter streamWriter = new StreamWriter(cachePath, true, Encoding.Default))
+                                using (StreamWriter streamWriter = new StreamWriter(CachePath, true, Encoding.Default))
                                 {
                                     streamWriter.WriteLine("{0} {1}", message.SysInfo, returnedMessage.Photo.Last().FileId);
                                 }
                             }
                         }
                     }
-                    if (message.LoadedPhoto != null) telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: message.LoadedPhoto.TelegramId);
+                    if (message.LoadedPhoto != null) _telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: message.LoadedPhoto.TelegramId);
                     sw.Stop();
                     if (!(request.Contains("/help") || request.Contains("/start")))
                         Log(request, message.Text ?? "", sw.ElapsedMilliseconds.ToString());
@@ -123,31 +123,31 @@ namespace Telegrambot
         {
             try
             {
-                List<string> subs = File.ReadAllLines(subPath).ToList();
+                List<string> subs = File.ReadAllLines(SubPath).ToList();
                 using (var r = XmlReader.Create("https://www.pathofexile.com/news/rss"))
                 {
                     var feed = SyndicationFeed.Load(r);
                     var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
-                    if (lastEn == null) lastEn = last;
-                    if (last.Links[0].Uri != lastEn.Links[0].Uri)
+                    if (_lastEn == null) _lastEn = last;
+                    if (last.Links[0].Uri != _lastEn.Links[0].Uri)
                     {
-                        lastEn = last;
+                        _lastEn = last;
                         var enSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sen"));
                         foreach (var sub in enSubs)
-                            telegramBot.SendTextMessageAsync(chatId: long.Parse(sub.Split(' ')[0]), text: lastEn.Title.Text + '\n' + lastEn.Links[0].Uri);
+                            _telegramBot.SendTextMessageAsync(chatId: long.Parse(sub.Split(' ')[0]), text: _lastEn.Title.Text + '\n' + _lastEn.Links[0].Uri);
                     }
                 }
                 using (var r = XmlReader.Create("https://ru.pathofexile.com/news/rss"))
                 {
                     var feed = SyndicationFeed.Load(r);
                     var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
-                    if (lastRu == null) lastRu = last;
-                    if (last.Links[0].Uri != lastRu.Links[0].Uri)
+                    if (_lastRu == null) _lastRu = last;
+                    if (last.Links[0].Uri != _lastRu.Links[0].Uri)
                     {
-                        lastRu = last;
+                        _lastRu = last;
                         var ruSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sru"));
                         foreach (var sub in ruSubs)
-                            telegramBot.SendTextMessageAsync(chatId: long.Parse(sub.Split(' ')[0]), text: lastRu.Title.Text + '\n' + lastRu.Links[0].Uri);
+                            _telegramBot.SendTextMessageAsync(chatId: long.Parse(sub.Split(' ')[0]), text: _lastRu.Title.Text + '\n' + _lastRu.Links[0].Uri);
                     }
                 }
             }
@@ -164,7 +164,7 @@ namespace Telegrambot
 
         private static void Log(string request, string responce, string time)
         {
-            using (StreamWriter streamWriter = new StreamWriter(logPath, true, Encoding.Default))
+            using (StreamWriter streamWriter = new StreamWriter(LogPath, true, Encoding.Default))
             {
                 streamWriter.WriteLine($"{DateTime.Now}\nЗапрос:\n{request}\n\nОтвет:\n{responce}\nВремя ответа: {time}\n------------");
             }

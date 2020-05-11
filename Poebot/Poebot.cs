@@ -101,7 +101,7 @@ namespace Bot
         #region методы команд бота
         private Message BotCommand(string command, string param)
         {
-            string err_resp = "Неопознанный синтаксис команды. Смотри список доступных команд в описании бота или используй команду /help";
+            string errResp = "Неопознанный синтаксис команды. Смотри список доступных команд в описании бота или используй команду /help";
             switch (command)
             {
                 case "start":
@@ -130,7 +130,7 @@ namespace Bot
                     }
                 case "err":
                     {
-                        return new Message(err_resp);
+                        return new Message(errResp);
                     }
                 case "i":
                     {
@@ -175,7 +175,7 @@ namespace Bot
                     }
                 default:
                     {
-                        return new Message(err_resp);
+                        return new Message(errResp);
                     }
             }
         }
