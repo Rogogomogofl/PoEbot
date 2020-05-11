@@ -263,9 +263,16 @@ namespace Bot
             catch
             {
                 tradelink = "https://www.pathofexile.com/api/trade/search/" + league + "?redirect&source={\"query\":{\"type\":\"" + name + "\"}}";
-                HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(tradelink);
-                HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
-                tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
+                try
+                {
+                    HttpWebRequest myHttpWebRequest = (HttpWebRequest) WebRequest.Create(tradelink);
+                    HttpWebResponse myHttpWebResponse = (HttpWebResponse) myHttpWebRequest.GetResponse();
+                    tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
+                }
+                catch
+                {
+                    tradelink = string.Empty;
+                }
             }
 
             JArray history;

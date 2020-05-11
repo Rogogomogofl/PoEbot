@@ -36,6 +36,11 @@ namespace Bot
                 sw.Start();
                 Message message = poebot.ProcessRequest(query);
                 sw.Stop();
+                if (message == null)
+                {
+                    Console.WriteLine("Некорректный запрос");
+                    continue;
+                }
                 Console.WriteLine(message.Text);
                 if (message.DoesHaveAnImage())
                     using (MemoryStream stream = new MemoryStream(message.Image()))
