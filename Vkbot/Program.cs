@@ -5,8 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.ServiceModel.Syndication;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -80,24 +78,9 @@ namespace Vkbot
             }
         }
 
-        private static string UploadStream(string url, byte[] data)
-        {
-            using (var requestContent = new MultipartFormDataContent())
-            using (var imageContent = new ByteArrayContent(data))
-            {
-                imageContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/png");
-                requestContent.Add(imageContent, "photo", "image.png");
-                using (var httpClient = new HttpClient())
-                {
-                    var response = httpClient.PostAsync(url, requestContent).Result;
-                    return response.Content.ReadAsStringAsync().Result;
-                }
-            }
-        }
-
         private static void ProcessReqest(GroupUpdate ms)
         {
-            Poebot poebot = new Poebot(Poewatch);
+            Poebot poebot = new Poebot(Poewatch, new VkPhoto(CachePath, ms.Message.PeerId ?? throw new Exception("Id is null"), Vkapi.Photo));
             Stopwatch sw = new Stopwatch();
             sw.Start();
             string request;
@@ -106,69 +89,22 @@ namespace Vkbot
             else return;
 
             if (request.Contains("/sub ")) request += $"+{ms.Message.PeerId}+{SubPath}";
-            if (request.Contains("/i "))
-            {
-                string item = poebot.GetItemName(Regex.Split(request, @"/i ")[1]);
-                if (!string.IsNullOrEmpty(item))
-                {
-                    item = item.ToLower().Replace(' ', '-').Replace("'", "");
-                    string[] lines = File.ReadAllLines(CachePath);
-                    foreach (string line in lines)
-                    {
-                        var data = line.Split(' ');
-                        if (data[0] == item)
-                        {
-                            sw.Stop();
-                            SendMessage(new MessagesSendParams
-                            {
-                                Attachments = new List<MediaAttachment>
-                                    {
-                                        new Photo
-                                        {
-                                            Id = long.Parse(data[1]),
-                                            OwnerId = long.Parse(data[2])
-                                        }
-                                    },
-                                PeerId = ms.Message.PeerId
-                            });
-                            Log(request, "", sw.ElapsedMilliseconds.ToString());
-                            return;
-                        }
-                    }
-                }
-            }
 
             Bot.Message message = poebot.ProcessRequest(request);
             if (message == null) return;
             List<MediaAttachment> attachments = new List<MediaAttachment>();
-            if (message.DoesHaveAnImage())
-            {
-                try
-                {
-                    var uploadServer = Vkapi.Photo.GetMessagesUploadServer((long)ms.Message.PeerId);
-                    var photo = Vkapi.Photo.SaveMessagesPhoto(UploadStream(uploadServer.UploadUrl, message.Image()));
-                    if (ms.Message.Text.Contains("/i "))
-                    {
-                        using (StreamWriter stream = new StreamWriter(CachePath, true, Encoding.Default))
-                        {
-                            stream.WriteLine("{0} {1} {2}", message.SysInfo, photo[0].Id, photo[0].OwnerId);
-                        }
-                    }
-                    attachments.AddRange(photo);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                    return;
-                }
-            }
-            if (message.LoadedPhoto != null)
+            var cotent = message.Photo?.GetContent();
+            if (cotent != null)
             {
                 attachments.Add(new Photo
                 {
-                    Id = message.LoadedPhoto.VkId,
-                    OwnerId = message.LoadedPhoto.VkOwnerId
+                    Id = long.Parse(cotent[0]),
+                    OwnerId = long.Parse(cotent[1])
                 });
+            }
+            else
+            {
+                if (message.Text == null) return;
             }
             sw.Stop();
             SendMessage(new MessagesSendParams
@@ -177,6 +113,7 @@ namespace Vkbot
                 Attachments = attachments,
                 PeerId = ms.Message.PeerId
             });
+
             if (!request.Contains("/help"))
                 Log(request, message.Text ?? "", sw.ElapsedMilliseconds.ToString());
         }

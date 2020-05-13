@@ -68,49 +68,20 @@ namespace Telegrambot
                         else return;
                     }
                     var chats = File.ReadAllLines(LangPath);//to do
-                    Poebot poebot = new Poebot(Poewatch);
+                    Poebot poebot = new Poebot(Poewatch, new TelegramPhoto(CachePath, e.Message.Chat.Id, _telegramBot));
                     Stopwatch sw = new Stopwatch();
                     sw.Start();
                     string request = e.Message.Text;
                     if (request.Contains("/sub ")) request += "+" + e.Message.Chat.Id + "+" + SubPath;
-                    if (request.Contains("/i "))
-                    {
-                        string item = poebot.GetItemName(Regex.Split(request, @"/i ")[1]);
-                        if (!string.IsNullOrEmpty(item))
-                        {
-                            item = item.ToLower().Replace(' ', '-').Replace("'", "");
-                            string[] lines = File.ReadAllLines(CachePath);
-                            foreach (string line in lines)
-                            {
-                                var data = line.Split(' ');
-                                if (data[0] == item)
-                                {
-                                    sw.Stop();
-                                    _telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: data[1]);
-                                    Log(request, "", sw.ElapsedMilliseconds.ToString());
-                                    return;
-                                }
-                            }
-                        }
-                    }
+
                     Message message = poebot.ProcessRequest(request);
                     if (message == null) return;
                     if (message.Text != null) _telegramBot.SendTextMessageAsync(chatId: e.Message.Chat.Id, text: message.Text);
-                    if (message.DoesHaveAnImage())
+                    var content = message.Photo?.GetContent();
+                    if (content != null)
                     {
-                        using (MemoryStream stream = new MemoryStream(message.Image()))
-                        {
-                            var returnedMessage = _telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: stream).Result;
-                            if (request.Contains("/i "))
-                            {
-                                using (StreamWriter streamWriter = new StreamWriter(CachePath, true, Encoding.Default))
-                                {
-                                    streamWriter.WriteLine("{0} {1}", message.SysInfo, returnedMessage.Photo.Last().FileId);
-                                }
-                            }
-                        }
+                        _telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: content[0]);
                     }
-                    if (message.LoadedPhoto != null) _telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: message.LoadedPhoto.TelegramId);
                     sw.Stop();
                     if (!(request.Contains("/help") || request.Contains("/start")))
                         Log(request, message.Text ?? "", sw.ElapsedMilliseconds.ToString());

@@ -29,7 +29,7 @@ namespace Bot
             Console.WriteLine("Working");
             while (true)
             {
-                Poebot poebot = new Poebot(poewatch);
+                Poebot poebot = new Poebot(poewatch, new TestPhoto());
                 string query = Console.ReadLine();
                 if (string.IsNullOrEmpty(query)) continue;
                 Stopwatch sw = new Stopwatch();
@@ -42,13 +42,6 @@ namespace Bot
                     continue;
                 }
                 Console.WriteLine(message.Text);
-                if (message.DoesHaveAnImage())
-                    using (MemoryStream stream = new MemoryStream(message.Image()))
-                    {
-                        Bitmap bmp = new Bitmap(stream); 
-                        bmp.Save("image.png", ImageFormat.Png);
-                        bmp.Dispose();
-                    }
                 Console.WriteLine($"Время обработки запроса: {sw.ElapsedMilliseconds} мс");
             }
         }
