@@ -19,8 +19,8 @@ namespace Bot
 {
     public class Poebot
     {
-        private readonly string[] labLayouts = {"normal", "cruel", "merciless", "uber"};
-        private readonly string[] hints = {"delve", "incursion", "betrayal", /*"all"*/};
+        private readonly string[] labLayouts = { "normal", "cruel", "merciless", "uber" };
+        private readonly string[] hints = { "delve", "incursion", "betrayal", /*"all"*/};
         private readonly Regex commandReg = new Regex(@"^[/]\S+");
         private readonly object requestLocker = new object();
         private readonly object screenshotLocker = new object();
@@ -123,79 +123,79 @@ namespace Bot
             switch (command)
             {
                 case "start":
-                {
-                    return new Message(
-                        "Привет, я информационный бот-помощник по игре Path of Exile. Могу выдавать разную полезную информацию или присылать новости. Используй комманду /help, чтобы увидеть список всех команд");
-                }
+                    {
+                        return new Message(
+                            "Привет, я информационный бот-помощник по игре Path of Exile. Могу выдавать разную полезную информацию или присылать новости. Используй комманду /help, чтобы увидеть список всех команд");
+                    }
                 case "w":
-                {
-                    return new Message(text: ItemSearch(param).url);
-                }
+                    {
+                        return new Message(text: ItemSearch(param).url);
+                    }
                 case "p":
-                {
-                    return TradeSearch(param);
-                }
+                    {
+                        return TradeSearch(param);
+                    }
                 case "c":
-                {
-                    return GetCharInfo(param);
-                }
+                    {
+                        return GetCharInfo(param);
+                    }
                 case "cl":
-                {
-                    return GetCharList(param);
-                }
+                    {
+                        return GetCharList(param);
+                    }
                 case "b":
-                {
-                    return PoeninjaBuilds(param);
-                }
+                    {
+                        return PoeninjaBuilds(param);
+                    }
                 case "err":
-                {
-                    return new Message(errResp);
-                }
+                    {
+                        return new Message(errResp);
+                    }
                 case "i":
-                {
-                    return WikiScreenshot(param);
-                }
+                    {
+                        return WikiScreenshot(param);
+                    }
                 case "l":
-                {
-                    return LabLayout(param);
-                }
+                    {
+                        return LabLayout(param);
+                    }
                 case "h":
-                {
-                    return LeagueHint(param);
-                }
+                    {
+                        return LeagueHint(param);
+                    }
                 case "top":
-                {
-                    return TopPrices(param);
-                }
+                    {
+                        return TopPrices(param);
+                    }
                 case "hm":
-                {
-                    return HelpMe(param);
-                }
+                    {
+                        return HelpMe(param);
+                    }
                 case "help":
-                {
-                    return new Message("Список доступных команд:" +
-                                       "\n/w название - Ссылка на wiki по запросу" +
-                                       "\n/p предмет [6l или 5l] [| лига] - Цена предмета с графиком изменения. Опционально 5 или 6 линков и выбор лиги" +
-                                       "\n/c имя героя полностью - Ссылка на профиль героя" +
-                                       "\n/cl имя профиля полностью - Вывод всех персонажей профиля" +
-                                       "\n/b предмет, камень умения или значимое пассивное умение - Вывод билдов на ниндзе с вещами из запроса. Можно указывать несколько вещей, разделенных знаком +" +
-                                       "\n/i название - Скрин с wiki по запросу (работает медленно, проявите терпение:))" +
-                                       "\n/l название или номер лабиринта - Вывод картинки с лайаутом выбранного лабиринта на сегодня" +
-                                       "\n/h название лиги - Вывод картинки с подсказками к лиге" +
-                                       "\n/sub en или /sub ru - Подписка беседы на новости на соответствующем языке" +
-                                       "\n/top категория [количество] [группа] - Вывод топа предметов по цене из указанной категории. По умолчанию количество = 10, группы все" +
-                                       "\n/hm название - Подсказка всех предметов по названию" +
-                                       "\n\nЗапрос можно писать сокращено, если не указано обратное (например /p xo hea вместо /p Xoph's Heart). Команды /p, /b, /l, /h, /top и /hm работают только с запросами на английском языке, все остальные также понимают русский"
-                    );
-                }
+                    {
+                        return new Message("Список доступных команд:" +
+                                           "\n/w название - Ссылка на wiki по запросу" +
+                                           "\n/p предмет [6l или 5l] [| лига] - Цена предмета с графиком изменения. Опционально 5 или 6 линков и выбор лиги" +
+                                           "\n/c имя героя полностью - Ссылка на профиль героя" +
+                                           "\n/cl имя профиля полностью - Вывод всех персонажей профиля" +
+                                           "\n/b предмет, камень умения или значимое пассивное умение - Вывод билдов на ниндзе с вещами из запроса. Можно указывать несколько вещей, разделенных знаком +" +
+                                           "\n/i название - Скрин с wiki по запросу (работает медленно, проявите терпение:))" +
+                                           "\n/l название или номер лабиринта - Вывод картинки с лайаутом выбранного лабиринта на сегодня" +
+                                           "\n/h название лиги - Вывод картинки с подсказками к лиге" +
+                                           "\n/sub en или /sub ru - Подписка беседы на новости на соответствующем языке" +
+                                           "\n/top категория [количество] [группа] - Вывод топа предметов по цене из указанной категории. По умолчанию количество = 10, группы все" +
+                                           "\n/hm название - Подсказка всех предметов по названию" +
+                                           "\n\nЗапрос можно писать сокращено, если не указано обратное (например /p xo hea вместо /p Xoph's Heart). Команды /p, /b, /l, /h, /top и /hm работают только с запросами на английском языке, все остальные также понимают русский"
+                        );
+                    }
                 case "sub":
-                {
-                    return SubToRss(param);
-                }
+                    {
+                        return SubToRss(param);
+                    }
                 default:
-                {
-                    return new Message(errResp);
-                }
+                    {
+                        return new Message(errResp);
+                    }
             }
         }
 
@@ -273,7 +273,7 @@ namespace Bot
                     null) break;
             }
 
-            string name = (string) jo["name"];
+            string name = (string)jo["name"];
 
             if (name == "Skin of the Lords" || name == "Skin of the Loyal" || name == "Tabula Rasa" ||
                 name == "Shadowstitch") //Все 6л по умолчанию сюда
@@ -289,8 +289,8 @@ namespace Bot
                             (string.IsNullOrEmpty(links) ? string.Empty : linksquery) + "\"name\":\"" + name + "\"}}";
             try
             {
-                HttpWebRequest myHttpWebRequest = (HttpWebRequest) WebRequest.Create(tradelink);
-                HttpWebResponse myHttpWebResponse = (HttpWebResponse) myHttpWebRequest.GetResponse();
+                HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(tradelink);
+                HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
                 tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
             }
             catch
@@ -299,8 +299,8 @@ namespace Bot
                             "?redirect&source={\"query\":{\"type\":\"" + name + "\"}}";
                 try
                 {
-                    HttpWebRequest myHttpWebRequest = (HttpWebRequest) WebRequest.Create(tradelink);
-                    HttpWebResponse myHttpWebResponse = (HttpWebResponse) myHttpWebRequest.GetResponse();
+                    HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(tradelink);
+                    HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
                     tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
                 }
                 catch
@@ -377,7 +377,7 @@ namespace Bot
                 plot.Series.Add(series);
                 using (var memstream = new MemoryStream())
                 {
-                    var pngExporter = new PngExporter {Width = 1000, Height = 400, Background = OxyColors.White};
+                    var pngExporter = new PngExporter { Width = 1000, Height = 400, Background = OxyColors.White };
                     pngExporter.Export(plot, memstream);
                     plotBytes = memstream.ToArray();
                 }
@@ -387,9 +387,9 @@ namespace Bot
             return new Message
             (
                 $"Цены на {name}{(!string.IsNullOrEmpty(links) ? " " + links + "L" : "")} (лига {league})"
-                + $"\nМинимальная: {Regex.Match((string) jo["min"], @"\d+[.]?\d{0,2}")}c"
-                + $"\nСредняя: {Regex.Match((string) jo["median"], @"\d+[.]?\d{0,2}")}c"
-                + $" ({Regex.Match((string) jo["exalted"], @"\d+[.]?\d{0,2}")}ex)\nСсылка на трейд: {tradelink}",
+                + $"\nМинимальная: {Regex.Match((string)jo["min"], @"\d+[.]?\d{0,2}")}c"
+                + $"\nСредняя: {Regex.Match((string)jo["median"], @"\d+[.]?\d{0,2}")}c"
+                + $" ({Regex.Match((string)jo["exalted"], @"\d+[.]?\d{0,2}")}ex)\nСсылка на трейд: {tradelink}",
                 photo
             );
         }
@@ -452,46 +452,46 @@ namespace Bot
                 switch (category)
                 {
                     case "weapon":
-                    {
-                        uniques.Add(result);
-                        break;
-                    }
+                        {
+                            uniques.Add(result);
+                            break;
+                        }
                     case "accessory":
-                    {
-                        uniques.Add(result);
-                        break;
-                    }
+                        {
+                            uniques.Add(result);
+                            break;
+                        }
                     case "armour":
-                    {
-                        uniques.Add(result);
-                        break;
-                    }
+                        {
+                            uniques.Add(result);
+                            break;
+                        }
                     case "jewel":
-                    {
-                        uniques.Add(result);
-                        break;
-                    }
+                        {
+                            uniques.Add(result);
+                            break;
+                        }
                     case "flask":
-                    {
-                        uniques.Add(result);
-                        break;
-                    }
+                        {
+                            uniques.Add(result);
+                            break;
+                        }
                     case "gem":
-                    {
-                        if (jo["group"].Value<string>() == "support")
-                            return new Message("Камни поддержки не поддерживаются этой командой");
-                        skills.Add(result);
-                        break;
-                    }
+                        {
+                            if (jo["group"].Value<string>() == "support")
+                                return new Message("Камни поддержки не поддерживаются этой командой");
+                            skills.Add(result);
+                            break;
+                        }
                     case "keystone":
-                    {
-                        keystones.Add(result);
-                        break;
-                    }
+                        {
+                            keystones.Add(result);
+                            break;
+                        }
                     default:
-                    {
-                        return new Message("Не удалось определить \"" + item + "\"");
-                    }
+                        {
+                            return new Message("Не удалось определить \"" + item + "\"");
+                        }
                 }
             }
 
@@ -594,10 +594,29 @@ namespace Bot
                     options.AddArgument("disable-gpu");
                     options.AddArgument("window-size=1000,2000");
                     options.PageLoadStrategy = PageLoadStrategy.None;
+
+                    var os = Environment.OSVersion;
+                    string driverDirectory;
+                    switch (os.Platform)
+                    {
+                        case PlatformID.Win32NT:
+                            {
+                                driverDirectory = Environment.CurrentDirectory;
+                                break;
+                            }
+                        case PlatformID.Unix:
+                            {
+                                driverDirectory = "/usr/bin";
+                                break;
+                            }
+                        default:
+                            {
+                                return new Message("Что-то пошло не так");
+                            }
+                    }
                     try
                     {
-                        //using (ChromeDriver driver = new ChromeDriver("/usr/bin", options)) //for linux
-                        using (ChromeDriver driver = new ChromeDriver(options)) //for windows
+                        using (ChromeDriver driver = new ChromeDriver(driverDirectory, options))
                         {
                             driver.Navigate().GoToUrl(url);
                             System.Threading.Thread.Sleep(4000);
@@ -703,24 +722,24 @@ namespace Bot
             switch (split.Length)
             {
                 case 2:
-                {
-                    try
                     {
-                        num = int.Parse(split[1]);
-                    }
-                    catch
-                    {
-                        group = split[1];
-                    }
+                        try
+                        {
+                            num = int.Parse(split[1]);
+                        }
+                        catch
+                        {
+                            group = split[1];
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 case 3:
-                {
-                    if (!int.TryParse(split[1], out num)) return new Message(formatHint);
-                    group = split[2];
-                    break;
-                }
+                    {
+                        if (!int.TryParse(split[1], out num)) return new Message(formatHint);
+                        group = split[2];
+                        break;
+                    }
             }
 
             if (num < 1) return new Message(formatHint);
@@ -729,7 +748,7 @@ namespace Bot
             var results = ja.Children<JObject>().Where(o =>
                 (!string.IsNullOrEmpty(group) ? o["group"].Value<string>() == group : true)
                 && (split[0] == "gem"
-                    ? (o["gemLevel"].Value<int>() == 20 && (string) o["gemQuality"] == "20" &&
+                    ? (o["gemLevel"].Value<int>() == 20 && (string)o["gemQuality"] == "20" &&
                        o["gemIsCorrupted"].Value<bool>() == false)
                     : true)
                 && o["linkCount"]?.Value<string>() == null);
@@ -757,7 +776,7 @@ namespace Bot
             string account;
             try
             {
-                account = (string) ja[0]["account"];
+                account = (string)ja[0]["account"];
             }
             catch
             {
@@ -882,7 +901,7 @@ namespace Bot
             {
                 url = "http://pastebin.com/raw/" + Regex.Split(url, "https://pastebin.com/")[1];
                 var pobcode = Common.GetContent(url);
-                var request = (HttpWebRequest) WebRequest.Create("https://pob.party/kv/put?ver=latest");
+                var request = (HttpWebRequest)WebRequest.Create("https://pob.party/kv/put?ver=latest");
                 var data = Encoding.ASCII.GetBytes(pobcode);
                 request.Method = "POST";
                 request.ContentType = "text/plain";
@@ -892,7 +911,7 @@ namespace Bot
                     stream.Write(data, 0, data.Length);
                 }
 
-                var response = (HttpWebResponse) request.GetResponse();
+                var response = (HttpWebResponse)request.GetResponse();
                 string responseString;
                 using (var streamReader = new StreamReader(response.GetResponseStream()))
                     responseString = streamReader.ReadToEnd();
