@@ -12,9 +12,9 @@ namespace Bot
 
         public override bool SavePhoto(string name, byte[] bytes)
         {
-            using (MemoryStream stream = new MemoryStream(bytes))
+            using (var stream = new MemoryStream(bytes))
             {
-                Bitmap bmp = new Bitmap(stream); 
+                var bmp = new Bitmap(stream);
                 bmp.Save("image.png", ImageFormat.Png);
                 bmp.Dispose();
             }
@@ -24,9 +24,9 @@ namespace Bot
 
         public override bool UploadPhoto(byte[] bytes)
         {
-            using (MemoryStream stream = new MemoryStream(bytes))
+            using (var stream = new MemoryStream(bytes))
             {
-                Bitmap bmp = new Bitmap(stream); 
+                var bmp = new Bitmap(stream);
                 bmp.Save("image.png", ImageFormat.Png);
                 bmp.Dispose();
             }

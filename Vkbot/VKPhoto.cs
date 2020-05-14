@@ -34,12 +34,14 @@ namespace Vkbot
                         result = response.Content.ReadAsStringAsync().Result;
                     }
                 }
+
                 var photo = _vkPhoto.SaveMessagesPhoto(result);
-                using (StreamWriter stream = new StreamWriter(CachePath, true, Encoding.Default))
+                using (var stream = new StreamWriter(CachePath, true, Encoding.Default))
                 {
                     stream.WriteLine("{0} {1} {2}", name, photo[0].Id, photo[0].OwnerId);
                 }
-                _content = new[] { photo[0].Id.ToString(), photo[0].OwnerId.ToString()};
+
+                _content = new[] {photo[0].Id.ToString(), photo[0].OwnerId.ToString()};
                 return true;
             }
             catch (Exception e)
@@ -52,13 +54,13 @@ namespace Vkbot
         public override bool LoadPhotoFromFile(string name)
         {
             var item = name.ToLower().Replace(' ', '-').Replace("'", "");
-            string[] lines = File.ReadAllLines(CachePath);
-            foreach (string line in lines)
+            var lines = File.ReadAllLines(CachePath);
+            foreach (var line in lines)
             {
                 var data = line.Split(' ');
                 if (data[0] == item)
                 {
-                    _content = new[] { data[1], data[2] };
+                    _content = new[] {data[1], data[2]};
                     return true;
                 }
             }
@@ -118,8 +120,9 @@ namespace Vkbot
                         result = response.Content.ReadAsStringAsync().Result;
                     }
                 }
+
                 var photo = _vkPhoto.SaveMessagesPhoto(result);
-                _content = new[] { photo[0].Id.ToString(), photo[0].OwnerId.ToString() };
+                _content = new[] {photo[0].Id.ToString(), photo[0].OwnerId.ToString()};
                 return true;
             }
             catch (Exception e)

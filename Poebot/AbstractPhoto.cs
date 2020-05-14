@@ -5,6 +5,7 @@
         public readonly string CachePath;
         public readonly long Id;
         protected string[] _content;
+
         public AbstractPhoto(string cachePath, long id)
         {
             CachePath = cachePath;

@@ -56,11 +56,12 @@ namespace Vkbot
                     serverResponse = Auth();
                     ts = serverResponse.Ts;
                 }
+
                 try
                 {
                     var poll = Vkapi.Groups.GetBotsLongPollHistory(
-                            new BotsLongPollHistoryParams()
-                            { Server = serverResponse.Server, Ts = ts, Key = serverResponse.Key, Wait = 1 });
+                        new BotsLongPollHistoryParams()
+                            {Server = serverResponse.Server, Ts = ts, Key = serverResponse.Key, Wait = 1});
                     ts = poll.Ts;
                     if (poll.Updates == null) continue;
                     foreach (var ms in poll.Updates.Where(x => x.Type == GroupUpdateType.MessageNew))
@@ -74,25 +75,26 @@ namespace Vkbot
                     serverResponse = Vkapi.Groups.GetLongPollServer(groupId: 178558335);
                     ts = serverResponse.Ts;
                 }
-
             }
         }
 
         private static void ProcessReqest(GroupUpdate ms)
         {
-            Poebot poebot = new Poebot(Poewatch, new VkPhoto(CachePath, ms.Message.PeerId ?? throw new Exception("Id is null"), Vkapi.Photo));
-            Stopwatch sw = new Stopwatch();
+            var poebot = new Poebot(Poewatch,
+                new VkPhoto(CachePath, ms.Message.PeerId ?? throw new Exception("Id is null"), Vkapi.Photo));
+            var sw = new Stopwatch();
             sw.Start();
             string request;
             if (!string.IsNullOrEmpty(ms.Message.Text)) request = ms.Message.Text;
-            else if (ms.Message.Attachments.Any() && ms.Message.Attachments[0].Type.Name == "Link") request = ms.Message.Attachments[0].Instance.ToString();
+            else if (ms.Message.Attachments.Any() && ms.Message.Attachments[0].Type.Name == "Link")
+                request = ms.Message.Attachments[0].Instance.ToString();
             else return;
 
             if (request.Contains("/sub ")) request += $"+{ms.Message.PeerId}+{SubPath}";
 
-            Bot.Message message = poebot.ProcessRequest(request);
+            var message = poebot.ProcessRequest(request);
             if (message == null) return;
-            List<MediaAttachment> attachments = new List<MediaAttachment>();
+            var attachments = new List<MediaAttachment>();
             var cotent = message.Photo?.GetContent();
             if (cotent != null)
             {
@@ -106,6 +108,7 @@ namespace Vkbot
             {
                 if (message.Text == null) return;
             }
+
             sw.Stop();
             SendMessage(new MessagesSendParams
             {
@@ -120,8 +123,9 @@ namespace Vkbot
 
         private static void SendMessage(MessagesSendParams messagesParams)
         {
-            Random random = new Random();
-            if (messagesParams.Message != null && messagesParams.Message.Count() > 4096) messagesParams.Message = messagesParams.Message.Substring(0, 4096);
+            var random = new Random();
+            if (messagesParams.Message != null && messagesParams.Message.Count() > 4096)
+                messagesParams.Message = messagesParams.Message.Substring(0, 4096);
             messagesParams.RandomId = random.Next();
             Vkapi.Messages.Send(messagesParams);
         }
@@ -145,6 +149,7 @@ namespace Vkbot
                     Thread.Sleep(10000);
                 }
             }
+
             throw new Exception("UB");
         }
 
@@ -152,7 +157,7 @@ namespace Vkbot
         {
             try
             {
-                List<string> subs = File.ReadAllLines(SubPath).ToList();
+                var subs = File.ReadAllLines(SubPath).ToList();
                 using (var r = XmlReader.Create("https://www.pathofexile.com/news/rss"))
                 {
                     var feed = SyndicationFeed.Load(r);
@@ -170,6 +175,7 @@ namespace Vkbot
                             });
                     }
                 }
+
                 using (var r = XmlReader.Create("https://ru.pathofexile.com/news/rss"))
                 {
                     var feed = SyndicationFeed.Load(r);
@@ -201,9 +207,10 @@ namespace Vkbot
 
         private static void Log(string request, string responce, string time)
         {
-            using (StreamWriter streamWriter = new StreamWriter(LogPath, true, Encoding.Default))
+            using (var streamWriter = new StreamWriter(LogPath, true, Encoding.Default))
             {
-                streamWriter.WriteLine($"{DateTime.Now}\nЗапрос:\n{request}\n\nОтвет:\n{responce}\nВремя ответа: {time}\n------------");
+                streamWriter.WriteLine(
+                    $"{DateTime.Now}\nЗапрос:\n{request}\n\nОтвет:\n{responce}\nВремя ответа: {time}\n------------");
             }
         }
     }

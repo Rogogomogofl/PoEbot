@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.ServiceModel.Syndication;
@@ -25,22 +22,23 @@ namespace Bot
             _rssUpdate.AutoReset = true;
             //rssUpdate.Enabled = true;
 
-            Poewatch poewatch = new Poewatch();
+            var poewatch = new Poewatch();
             Console.WriteLine("Working");
             while (true)
             {
-                Poebot poebot = new Poebot(poewatch, new TestPhoto());
-                string query = Console.ReadLine();
+                var poebot = new Poebot(poewatch, new TestPhoto());
+                var query = Console.ReadLine();
                 if (string.IsNullOrEmpty(query)) continue;
-                Stopwatch sw = new Stopwatch();
+                var sw = new Stopwatch();
                 sw.Start();
-                Message message = poebot.ProcessRequest(query);
+                var message = poebot.ProcessRequest(query);
                 sw.Stop();
                 if (message == null)
                 {
                     Console.WriteLine("Некорректный запрос");
                     continue;
                 }
+
                 Console.WriteLine(message.Text);
                 Console.WriteLine($"Время обработки запроса: {sw.ElapsedMilliseconds} мс");
             }
@@ -56,6 +54,7 @@ namespace Bot
                     var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
                     Console.WriteLine($"{last.Title.Text}\n{last.Links[0].Uri}");
                 }
+
                 using (var r = XmlReader.Create("https://ru.pathofexile.com/news/rss"))
                 {
                     var feed = SyndicationFeed.Load(r);

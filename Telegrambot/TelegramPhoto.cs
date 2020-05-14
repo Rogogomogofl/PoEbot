@@ -57,8 +57,8 @@ namespace Telegrambot
         public override bool LoadPhotoFromFile(string name)
         {
             var item = name.ToLower().Replace(' ', '-').Replace("'", "");
-            string[] lines = File.ReadAllLines(CachePath);
-            foreach (string line in lines)
+            var lines = File.ReadAllLines(CachePath);
+            foreach (var line in lines)
             {
                 var data = line.Split(' ');
                 if (data[0] == item)
@@ -77,10 +77,10 @@ namespace Telegrambot
             {
                 try
                 {
-                    using (MemoryStream stream = new MemoryStream(bytes))
+                    using (var stream = new MemoryStream(bytes))
                     {
                         var returnedMessage = _botClient.SendPhotoAsync(chatId: Id, photo: stream).Result;
-                        using (StreamWriter streamWriter = new StreamWriter(CachePath, true, Encoding.Default))
+                        using (var streamWriter = new StreamWriter(CachePath, true, Encoding.Default))
                         {
                             streamWriter.WriteLine("{0} {1}", name, returnedMessage.Photo.Last().FileId);
                         }
@@ -100,7 +100,7 @@ namespace Telegrambot
             {
                 try
                 {
-                    using (MemoryStream stream = new MemoryStream(bytes))
+                    using (var stream = new MemoryStream(bytes))
                     {
                         var returnedMessage = _botClient.SendPhotoAsync(chatId: Id, photo: stream).Result;
                         _content = new[] {returnedMessage.Photo.Last().FileId};

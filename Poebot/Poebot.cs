@@ -19,8 +19,8 @@ namespace Bot
 {
     public class Poebot
     {
-        private readonly string[] labLayouts = { "normal", "cruel", "merciless", "uber" };
-        private readonly string[] hints = { "delve", "incursion", "betrayal", /*"all"*/};
+        private readonly string[] labLayouts = {"normal", "cruel", "merciless", "uber"};
+        private readonly string[] hints = {"delve", "incursion", "betrayal", /*"all"*/};
         private readonly Regex commandReg = new Regex(@"^[/]\S+");
         private readonly object requestLocker = new object();
         private readonly object screenshotLocker = new object();
@@ -44,8 +44,8 @@ namespace Bot
 
             if (commandReg.IsMatch(request))
             {
-                string command = commandReg.Match(request).Value.TrimStart('/').ToLower();
-                string param = commandReg.Split(request)[1].Trim(' ');
+                var command = commandReg.Match(request).Value.TrimStart('/').ToLower();
+                var param = commandReg.Split(request)[1].Trim(' ');
                 if (string.IsNullOrEmpty(param) && command != "help" && command != "start") command = "err";
                 return BotCommand(command, param);
             }
@@ -92,8 +92,8 @@ namespace Bot
             }
             else
             {
-                Regex regex = new Regex($@"^{search.Replace(" ", @"\D*")}\D*");
-                Regex theRegex = new Regex($@"^the {search.Replace(" ", @"\D*")}\D*");
+                var regex = new Regex($@"^{search.Replace(" ", @"\D*")}\D*");
+                var theRegex = new Regex($@"^the {search.Replace(" ", @"\D*")}\D*");
                 var item = poewatch.FirstOrDefault(o =>
                     regex.IsMatch(o["name"].Value<string>().ToLower()) ||
                     theRegex.IsMatch(o["name"].Value<string>().ToLower()));
@@ -118,84 +118,84 @@ namespace Bot
 
         private Message BotCommand(string command, string param)
         {
-            string errResp =
+            var errResp =
                 "Неопознанный синтаксис команды. Смотри список доступных команд в описании бота или используй команду /help";
             switch (command)
             {
                 case "start":
-                    {
-                        return new Message(
-                            "Привет, я информационный бот-помощник по игре Path of Exile. Могу выдавать разную полезную информацию или присылать новости. Используй комманду /help, чтобы увидеть список всех команд");
-                    }
+                {
+                    return new Message(
+                        "Привет, я информационный бот-помощник по игре Path of Exile. Могу выдавать разную полезную информацию или присылать новости. Используй комманду /help, чтобы увидеть список всех команд");
+                }
                 case "w":
-                    {
-                        return new Message(text: ItemSearch(param).url);
-                    }
+                {
+                    return new Message(text: ItemSearch(param).url);
+                }
                 case "p":
-                    {
-                        return TradeSearch(param);
-                    }
+                {
+                    return TradeSearch(param);
+                }
                 case "c":
-                    {
-                        return GetCharInfo(param);
-                    }
+                {
+                    return GetCharInfo(param);
+                }
                 case "cl":
-                    {
-                        return GetCharList(param);
-                    }
+                {
+                    return GetCharList(param);
+                }
                 case "b":
-                    {
-                        return PoeninjaBuilds(param);
-                    }
+                {
+                    return PoeninjaBuilds(param);
+                }
                 case "err":
-                    {
-                        return new Message(errResp);
-                    }
+                {
+                    return new Message(errResp);
+                }
                 case "i":
-                    {
-                        return WikiScreenshot(param);
-                    }
+                {
+                    return WikiScreenshot(param);
+                }
                 case "l":
-                    {
-                        return LabLayout(param);
-                    }
+                {
+                    return LabLayout(param);
+                }
                 case "h":
-                    {
-                        return LeagueHint(param);
-                    }
+                {
+                    return LeagueHint(param);
+                }
                 case "top":
-                    {
-                        return TopPrices(param);
-                    }
+                {
+                    return TopPrices(param);
+                }
                 case "hm":
-                    {
-                        return HelpMe(param);
-                    }
+                {
+                    return HelpMe(param);
+                }
                 case "help":
-                    {
-                        return new Message("Список доступных команд:" +
-                                           "\n/w название - Ссылка на wiki по запросу" +
-                                           "\n/p предмет [6l или 5l] [| лига] - Цена предмета с графиком изменения. Опционально 5 или 6 линков и выбор лиги" +
-                                           "\n/c имя героя полностью - Ссылка на профиль героя" +
-                                           "\n/cl имя профиля полностью - Вывод всех персонажей профиля" +
-                                           "\n/b предмет, камень умения или значимое пассивное умение - Вывод билдов на ниндзе с вещами из запроса. Можно указывать несколько вещей, разделенных знаком +" +
-                                           "\n/i название - Скрин с wiki по запросу (работает медленно, проявите терпение:))" +
-                                           "\n/l название или номер лабиринта - Вывод картинки с лайаутом выбранного лабиринта на сегодня" +
-                                           "\n/h название лиги - Вывод картинки с подсказками к лиге" +
-                                           "\n/sub en или /sub ru - Подписка беседы на новости на соответствующем языке" +
-                                           "\n/top категория [количество] [группа] - Вывод топа предметов по цене из указанной категории. По умолчанию количество = 10, группы все" +
-                                           "\n/hm название - Подсказка всех предметов по названию" +
-                                           "\n\nЗапрос можно писать сокращено, если не указано обратное (например /p xo hea вместо /p Xoph's Heart). Команды /p, /b, /l, /h, /top и /hm работают только с запросами на английском языке, все остальные также понимают русский"
-                        );
-                    }
+                {
+                    return new Message("Список доступных команд:" +
+                                       "\n/w название - Ссылка на wiki по запросу" +
+                                       "\n/p предмет [6l или 5l] [| лига] - Цена предмета с графиком изменения. Опционально 5 или 6 линков и выбор лиги" +
+                                       "\n/c имя героя полностью - Ссылка на профиль героя" +
+                                       "\n/cl имя профиля полностью - Вывод всех персонажей профиля" +
+                                       "\n/b предмет, камень умения или значимое пассивное умение - Вывод билдов на ниндзе с вещами из запроса. Можно указывать несколько вещей, разделенных знаком +" +
+                                       "\n/i название - Скрин с wiki по запросу (работает медленно, проявите терпение:))" +
+                                       "\n/l название или номер лабиринта - Вывод картинки с лайаутом выбранного лабиринта на сегодня" +
+                                       "\n/h название лиги - Вывод картинки с подсказками к лиге" +
+                                       "\n/sub en или /sub ru - Подписка беседы на новости на соответствующем языке" +
+                                       "\n/top категория [количество] [группа] - Вывод топа предметов по цене из указанной категории. По умолчанию количество = 10, группы все" +
+                                       "\n/hm название - Подсказка всех предметов по названию" +
+                                       "\n\nЗапрос можно писать сокращено, если не указано обратное (например /p xo hea вместо /p Xoph's Heart). Команды /p, /b, /l, /h, /top и /hm работают только с запросами на английском языке, все остальные также понимают русский"
+                    );
+                }
                 case "sub":
-                    {
-                        return SubToRss(param);
-                    }
+                {
+                    return SubToRss(param);
+                }
                 default:
-                    {
-                        return new Message(errResp);
-                    }
+                {
+                    return new Message(errResp);
+                }
             }
         }
 
@@ -203,10 +203,10 @@ namespace Bot
         {
             srch = srch.ToLower();
 
-            string links = Regex.Match(Regex.Match(srch, @"(5l|6l)").ToString(), @"\d").ToString();
+            var links = Regex.Match(Regex.Match(srch, @"(5l|6l)").ToString(), @"\d").ToString();
             srch = srch.Replace("6l", "").Replace("5l", "");
 
-            string league = poewatch.DefaultLeague;
+            var league = poewatch.DefaultLeague;
             if (srch.IndexOf('|') > 0)
             {
                 JArray leaguesja;
@@ -220,7 +220,7 @@ namespace Bot
                     return new Message("В данный момент сервер с базой данных недоступен");
                 }
 
-                string leagues = "";
+                var leagues = "";
                 foreach (var el in leaguesja)
                     leagues += el["name"].Value<string>() + "\n";
                 try
@@ -229,7 +229,7 @@ namespace Bot
                     if (string.IsNullOrEmpty(ln))
                         throw new Exception();
                     srch = srch.Substring(0, srch.IndexOf('|') - 1);
-                    Regex lreg = new Regex($@"^{ln.Replace(" ", @"\S*\s?")}\S*");
+                    var lreg = new Regex($@"^{ln.Replace(" ", @"\S*\s?")}\S*");
                     league = leaguesja.FirstOrDefault(o => lreg.IsMatch(o["name"].Value<string>().ToLower()))["name"]
                         .Value<string>();
                 }
@@ -241,10 +241,10 @@ namespace Bot
 
             srch = srch.Trim(' ');
 
-            string pattern = srch.Replace("the ", @"the\s");
-            Regex regex = new Regex($@"^{pattern.Replace(" ", @"\D*\s\D*")}\D*");
-            Regex theRegex = new Regex($@"^the {pattern.Replace(" ", @"\D*\s\D*")}\D*");
-            JObject jo = new JObject();
+            var pattern = srch.Replace("the ", @"the\s");
+            var regex = new Regex($@"^{pattern.Replace(" ", @"\D*\s\D*")}\D*");
+            var theRegex = new Regex($@"^the {pattern.Replace(" ", @"\D*\s\D*")}\D*");
+            var jo = new JObject();
             JArray ja;
 
             var tmp = poewatch.Where(o =>
@@ -273,7 +273,7 @@ namespace Bot
                     null) break;
             }
 
-            string name = (string)jo["name"];
+            var name = (string) jo["name"];
 
             if (name == "Skin of the Lords" || name == "Skin of the Loyal" || name == "Tabula Rasa" ||
                 name == "Shadowstitch") //Все 6л по умолчанию сюда
@@ -289,8 +289,8 @@ namespace Bot
                             (string.IsNullOrEmpty(links) ? string.Empty : linksquery) + "\"name\":\"" + name + "\"}}";
             try
             {
-                HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(tradelink);
-                HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
+                var myHttpWebRequest = (HttpWebRequest) WebRequest.Create(tradelink);
+                var myHttpWebResponse = (HttpWebResponse) myHttpWebRequest.GetResponse();
                 tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
             }
             catch
@@ -299,8 +299,8 @@ namespace Bot
                             "?redirect&source={\"query\":{\"type\":\"" + name + "\"}}";
                 try
                 {
-                    HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(tradelink);
-                    HttpWebResponse myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
+                    var myHttpWebRequest = (HttpWebRequest) WebRequest.Create(tradelink);
+                    var myHttpWebResponse = (HttpWebResponse) myHttpWebRequest.GetResponse();
                     tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
                 }
                 catch
@@ -351,7 +351,7 @@ namespace Bot
                     series.Points.Add(new DataPoint(DateTimeAxis.ToDouble(Convert.ToDateTime(date)), median));
                 }
 
-                PlotModel plot = new PlotModel();
+                var plot = new PlotModel();
                 plot.Axes.Add(new DateTimeAxis
                 {
                     Position = AxisPosition.Bottom,
@@ -377,7 +377,7 @@ namespace Bot
                 plot.Series.Add(series);
                 using (var memstream = new MemoryStream())
                 {
-                    var pngExporter = new PngExporter { Width = 1000, Height = 400, Background = OxyColors.White };
+                    var pngExporter = new PngExporter {Width = 1000, Height = 400, Background = OxyColors.White};
                     pngExporter.Export(plot, memstream);
                     plotBytes = memstream.ToArray();
                 }
@@ -387,17 +387,17 @@ namespace Bot
             return new Message
             (
                 $"Цены на {name}{(!string.IsNullOrEmpty(links) ? " " + links + "L" : "")} (лига {league})"
-                + $"\nМинимальная: {Regex.Match((string)jo["min"], @"\d+[.]?\d{0,2}")}c"
-                + $"\nСредняя: {Regex.Match((string)jo["median"], @"\d+[.]?\d{0,2}")}c"
-                + $" ({Regex.Match((string)jo["exalted"], @"\d+[.]?\d{0,2}")}ex)\nСсылка на трейд: {tradelink}",
+                + $"\nМинимальная: {Regex.Match((string) jo["min"], @"\d+[.]?\d{0,2}")}c"
+                + $"\nСредняя: {Regex.Match((string) jo["median"], @"\d+[.]?\d{0,2}")}c"
+                + $" ({Regex.Match((string) jo["exalted"], @"\d+[.]?\d{0,2}")}ex)\nСсылка на трейд: {tradelink}",
                 photo
             );
         }
 
         private Message HelpMe(string req)
         {
-            string pattern = req.Replace("the ", @"the\s");
-            Regex regex = new Regex(pattern.Replace(" ", @"\D*\s\D*") + @"\D*");
+            var pattern = req.Replace("the ", @"the\s");
+            var regex = new Regex(pattern.Replace(" ", @"\D*\s\D*") + @"\D*");
             var items = poewatch.Where(o => regex.IsMatch(o["name"].Value<string>().ToLower())
                                             && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
             var searchResults = items.Select(o => o["name"].Value<string>()).Distinct();
@@ -409,7 +409,7 @@ namespace Bot
 
         private Message PoeninjaBuilds(string srch)
         {
-            List<string> items = new List<string>();
+            var items = new List<string>();
             while (srch.IndexOf('+') > 0)
             {
                 items.Add(srch.Substring(0, srch.IndexOf('+')).TrimStart(' ').TrimEnd(' '));
@@ -418,14 +418,14 @@ namespace Bot
 
             items.Add(srch.TrimStart(' ').TrimEnd(' '));
 
-            List<string> uniques = new List<string>();
-            List<string> skills = new List<string>();
-            List<string> keystones = new List<string>();
+            var uniques = new List<string>();
+            var skills = new List<string>();
+            var keystones = new List<string>();
             foreach (var item in items)
             {
-                Regex regex = new Regex($@"^{item.Replace(" ", @"\D*")}\D*");
-                Regex theRegex = new Regex($@"^the {item.Replace(" ", @"\D*")}\D*");
-                JObject jo = poewatch.FirstOrDefault(o =>
+                var regex = new Regex($@"^{item.Replace(" ", @"\D*")}\D*");
+                var theRegex = new Regex($@"^the {item.Replace(" ", @"\D*")}\D*");
+                var jo = poewatch.FirstOrDefault(o =>
                     (regex.IsMatch(o["name"].Value<string>().ToLower()) ||
                      theRegex.IsMatch(o["name"].Value<string>().ToLower()))
                     && o["category"].Value<string>() != "enchantment");
@@ -452,46 +452,46 @@ namespace Bot
                 switch (category)
                 {
                     case "weapon":
-                        {
-                            uniques.Add(result);
-                            break;
-                        }
+                    {
+                        uniques.Add(result);
+                        break;
+                    }
                     case "accessory":
-                        {
-                            uniques.Add(result);
-                            break;
-                        }
+                    {
+                        uniques.Add(result);
+                        break;
+                    }
                     case "armour":
-                        {
-                            uniques.Add(result);
-                            break;
-                        }
+                    {
+                        uniques.Add(result);
+                        break;
+                    }
                     case "jewel":
-                        {
-                            uniques.Add(result);
-                            break;
-                        }
+                    {
+                        uniques.Add(result);
+                        break;
+                    }
                     case "flask":
-                        {
-                            uniques.Add(result);
-                            break;
-                        }
+                    {
+                        uniques.Add(result);
+                        break;
+                    }
                     case "gem":
-                        {
-                            if (jo["group"].Value<string>() == "support")
-                                return new Message("Камни поддержки не поддерживаются этой командой");
-                            skills.Add(result);
-                            break;
-                        }
+                    {
+                        if (jo["group"].Value<string>() == "support")
+                            return new Message("Камни поддержки не поддерживаются этой командой");
+                        skills.Add(result);
+                        break;
+                    }
                     case "keystone":
-                        {
-                            keystones.Add(result);
-                            break;
-                        }
+                    {
+                        keystones.Add(result);
+                        break;
+                    }
                     default:
-                        {
-                            return new Message("Не удалось определить \"" + item + "\"");
-                        }
+                    {
+                        return new Message("Не удалось определить \"" + item + "\"");
+                    }
                 }
             }
 
@@ -557,9 +557,9 @@ namespace Bot
             }
             else
             {
-                Regex regex = new Regex($@"^{search.Replace(" ", @"\D*")}\D*");
-                Regex theRegex = new Regex($@"^the {search.Replace(" ", @"\D*")}\D*");
-                JObject item = poewatch.FirstOrDefault(o =>
+                var regex = new Regex($@"^{search.Replace(" ", @"\D*")}\D*");
+                var theRegex = new Regex($@"^the {search.Replace(" ", @"\D*")}\D*");
+                var item = poewatch.FirstOrDefault(o =>
                     (regex.IsMatch(o["name"].Value<string>().ToLower()) ||
                      theRegex.IsMatch(o["name"].Value<string>().ToLower())));
                 if (item != null)
@@ -576,15 +576,15 @@ namespace Bot
         private Message WikiScreenshot(string search)
         {
             var wiki = ItemSearch(search);
-            string url = wiki.url;
-            string name = wiki.name;
+            var url = wiki.url;
+            var name = wiki.name;
             if (string.IsNullOrEmpty(name)) return new Message(text: url);
 
             if (!photo.LoadPhotoFromFile(name))
             {
                 lock (screenshotLocker)
                 {
-                    ChromeOptions options = new ChromeOptions();
+                    var options = new ChromeOptions();
                     options.AddArgument("enable-automation");
                     options.AddArgument("headless");
                     options.AddArgument("no-sandbox");
@@ -600,27 +600,29 @@ namespace Bot
                     switch (os.Platform)
                     {
                         case PlatformID.Win32NT:
-                            {
-                                driverDirectory = Environment.CurrentDirectory;
-                                break;
-                            }
+                        {
+                            driverDirectory = Environment.CurrentDirectory;
+                            break;
+                        }
                         case PlatformID.Unix:
-                            {
-                                driverDirectory = "/usr/bin";
-                                break;
-                            }
+                        {
+                            driverDirectory = "/usr/bin";
+                            break;
+                        }
                         default:
-                            {
-                                return new Message("Что-то пошло не так");
-                            }
+                        {
+                            return new Message("Что-то пошло не так");
+                        }
                     }
+
                     try
                     {
-                        using (ChromeDriver driver = new ChromeDriver(driverDirectory, options))
+                        using (var driver = new ChromeDriver(driverDirectory, options))
                         {
                             driver.Navigate().GoToUrl(url);
                             System.Threading.Thread.Sleep(4000);
                             var bytes = driver.GetScreenshot().AsByteArray;
+                            var normalizeHeight = true;
                             IWebElement element;
                             if (poewatch.FirstOrDefault(o => o["name"].Value<string>() == name) != null)
                             {
@@ -629,13 +631,34 @@ namespace Bot
                             else
                             {
                                 element = driver.FindElementByCssSelector(".infocard");
+                                normalizeHeight = false;
                             }
 
-                            using (Bitmap screenshot = new Bitmap(new MemoryStream(bytes)))
+                            using (var bytesStream = new MemoryStream(bytes))
+                            using (var screenshot = new Bitmap(bytesStream))
                             {
-                                Rectangle croppedImage = new Rectangle(element.Location.X, element.Location.Y - 50,
+                                //to do: Смещение кадра выше, пока не будет нижняя рамка
+                                var y = element.Location.Y;
+                                if (normalizeHeight)
+                                    for (; y > 0; y--)
+                                    {
+                                        var pixel = screenshot.GetPixel(element.Location.X,
+                                            y + element.Size.Height - 1);
+
+                                        if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 2) !=
+                                            Color.FromArgb(255, 0, 0, 0)) continue;
+                                        if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 1) !=
+                                            pixel) continue;
+                                        if (screenshot.GetPixel(element.Location.X, y + element.Size.Height - 2) !=
+                                            pixel) continue;
+                                        break;
+                                    }
+
+                                if (y == 1) throw new Exception("Ошибка поиска границ инфокарточки");
+
+                                var croppedImage = new Rectangle(element.Location.X, y,
                                     element.Size.Width, element.Size.Height);
-                                using (MemoryStream memoryStream = new MemoryStream())
+                                using (var memoryStream = new MemoryStream())
                                 {
                                     screenshot.Clone(croppedImage, screenshot.PixelFormat).Save(memoryStream,
                                         System.Drawing.Imaging.ImageFormat.Png);
@@ -658,7 +681,7 @@ namespace Bot
 
         private Message LabLayout(string search)
         {
-            Regex regex = new Regex(@"^" + search.ToLower() + @"\S*");
+            var regex = new Regex(@"^" + search.ToLower() + @"\S*");
             try
             {
                 search = labLayouts[int.Parse(search) - 1];
@@ -679,12 +702,12 @@ namespace Bot
 
             using (var wc = new WebClient())
             {
-                DateTime date1 = DateTime.Today;
+                var date1 = DateTime.Today;
                 var layouturl = "https://www.poelab.com/wp-content/labfiles/" +
                                 $"{date1.Year}-{string.Format("{0:00}", date1.Month) + "-" + string.Format("{0:00}", date1.Day)}_{search}.jpg";
                 try
                 {
-                    byte[] data = wc.DownloadData(layouturl);
+                    var data = wc.DownloadData(layouturl);
                     photo.UploadPhoto(data);
                     return new Message(photo: photo);
                 }
@@ -698,7 +721,7 @@ namespace Bot
 
         private Message LeagueHint(string request)
         {
-            string hint = hints.FirstOrDefault(o => Regex.IsMatch(o, $@"^{request.ToLower()}"));
+            var hint = hints.FirstOrDefault(o => Regex.IsMatch(o, $@"^{request.ToLower()}"));
             if (!photo.GetPresetPhoto(hint))
             {
                 return new Message(
@@ -712,43 +735,43 @@ namespace Bot
 
         private Message TopPrices(string request)
         {
-            string formatHint = "Формат сообщения: category [quantity] [group]\nПо умолчанию quantity = 10, группы все";
+            var formatHint = "Формат сообщения: category [quantity] [group]\nПо умолчанию quantity = 10, группы все";
             var split = request.Split(' ');
             if (!Poewatch.TradeCategories.Contains(split[0]))
                 return new Message(
                     $"Некорректная категория. Список доступных категорий:\n{string.Join("\n", Poewatch.TradeCategories)}");
-            int num = 10;
-            string group = "";
+            var num = 10;
+            var group = "";
             switch (split.Length)
             {
                 case 2:
+                {
+                    try
                     {
-                        try
-                        {
-                            num = int.Parse(split[1]);
-                        }
-                        catch
-                        {
-                            group = split[1];
-                        }
+                        num = int.Parse(split[1]);
+                    }
+                    catch
+                    {
+                        group = split[1];
+                    }
 
-                        break;
-                    }
+                    break;
+                }
                 case 3:
-                    {
-                        if (!int.TryParse(split[1], out num)) return new Message(formatHint);
-                        group = split[2];
-                        break;
-                    }
+                {
+                    if (!int.TryParse(split[1], out num)) return new Message(formatHint);
+                    group = split[2];
+                    break;
+                }
             }
 
             if (num < 1) return new Message(formatHint);
-            JArray ja = poewatch.Get(split[0]);
+            var ja = poewatch.Get(split[0]);
             if (ja == null || ja.Count == 0) return new Message("Не удалось получить данные о ценах");
             var results = ja.Children<JObject>().Where(o =>
                 (!string.IsNullOrEmpty(group) ? o["group"].Value<string>() == group : true)
                 && (split[0] == "gem"
-                    ? (o["gemLevel"].Value<int>() == 20 && (string)o["gemQuality"] == "20" &&
+                    ? (o["gemLevel"].Value<int>() == 20 && (string) o["gemQuality"] == "20" &&
                        o["gemIsCorrupted"].Value<bool>() == false)
                     : true)
                 && o["linkCount"]?.Value<string>() == null);
@@ -776,7 +799,7 @@ namespace Bot
             string account;
             try
             {
-                account = (string)ja[0]["account"];
+                account = (string) ja[0]["account"];
             }
             catch
             {
@@ -805,7 +828,7 @@ namespace Bot
 
             if (ja.Count == 0)
                 return new Message("Указанный профиль не найден");
-            string chars = "";
+            var chars = "";
             foreach (var jt in ja)
                 chars += $"\n{jt["character"].Value<string>()} (лига: {jt["league"].Value<string>()}";
             return new Message($"Список доступных для отображения персонажей профиля {account}:\n{chars}");
@@ -813,7 +836,7 @@ namespace Bot
 
         private Message SubToRss(string prs)
         {
-            string[] parameters = prs.Split('+');
+            var parameters = prs.Split('+');
             if (Regex.IsMatch(parameters[0], @"(ru|en)"))
             {
                 List<string> subs;
@@ -827,7 +850,7 @@ namespace Bot
                     return new Message("Ошибка подписки, попробуйте повторить позже");
                 }
 
-                string thisSub = subs.FirstOrDefault(x => Regex.IsMatch(x, parameters[1] + " " + parameters[0]));
+                var thisSub = subs.FirstOrDefault(x => Regex.IsMatch(x, parameters[1] + " " + parameters[0]));
                 if (thisSub == null)
                 {
                     using (var sw = new StreamWriter(parameters[2], true, Encoding.Default))
@@ -873,17 +896,17 @@ namespace Bot
         {
             try
             {
-                HtmlWeb web = new HtmlWeb();
-                HtmlDocument hd = web.Load(url);
-                string title = hd.DocumentNode.SelectSingleNode("//h1[contains(@class, '_eYtD2XCVieq6emjKBH3m')]")
+                var web = new HtmlWeb();
+                var hd = web.Load(url);
+                var title = hd.DocumentNode.SelectSingleNode("//h1[contains(@class, '_eYtD2XCVieq6emjKBH3m')]")
                     .InnerText.Replace("&#x27;", "'");
-                HtmlNode node = hd.DocumentNode.SelectSingleNode("//a[contains(@class, 'b5szba-0')]");
+                var node = hd.DocumentNode.SelectSingleNode("//a[contains(@class, 'b5szba-0')]");
                 if (node == null)
                     node = hd.DocumentNode.SelectSingleNode("//img[contains(@class, '_2_tDEnGMLxpM6uOa2kaDB3')]")
                         .ParentNode;
                 using (var wc = new WebClient())
                 {
-                    byte[] data = wc.DownloadData(node.Attributes["href"].Value);
+                    var data = wc.DownloadData(node.Attributes["href"].Value);
                     photo.UploadPhoto(data);
                     return new Message(text: title, photo: photo);
                 }
@@ -901,7 +924,7 @@ namespace Bot
             {
                 url = "http://pastebin.com/raw/" + Regex.Split(url, "https://pastebin.com/")[1];
                 var pobcode = Common.GetContent(url);
-                var request = (HttpWebRequest)WebRequest.Create("https://pob.party/kv/put?ver=latest");
+                var request = (HttpWebRequest) WebRequest.Create("https://pob.party/kv/put?ver=latest");
                 var data = Encoding.ASCII.GetBytes(pobcode);
                 request.Method = "POST";
                 request.ContentType = "text/plain";
@@ -911,7 +934,7 @@ namespace Bot
                     stream.Write(data, 0, data.Length);
                 }
 
-                var response = (HttpWebResponse)request.GetResponse();
+                var response = (HttpWebResponse) request.GetResponse();
                 string responseString;
                 using (var streamReader = new StreamReader(response.GetResponseStream()))
                     responseString = streamReader.ReadToEnd();

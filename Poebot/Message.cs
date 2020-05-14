@@ -3,7 +3,7 @@
     public class Message
     {
         public string Text { get; }
-        
+
         public AbstractPhoto Photo;
 
         public string SysInfo { get; }

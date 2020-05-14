@@ -13,13 +13,13 @@ namespace Bot
             switch (language)
             {
                 case "ru":
-                    {
-                        return "В данный момент сервер с базой данных недоступен";
-                    }
+                {
+                    return "В данный момент сервер с базой данных недоступен";
+                }
                 case "en":
-                    {
-                        return "";
-                    }
+                {
+                    return "";
+                }
                 default: return "";
             }
         }

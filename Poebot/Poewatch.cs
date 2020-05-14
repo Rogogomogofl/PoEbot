@@ -8,7 +8,9 @@ namespace Bot
 {
     public class Poewatch
     {
-        public static readonly string[] TradeCategories = { "gem", "weapon", "accessory", "armour", "jewel", "flask", "card", "currency", "map", "prophecy" };
+        public static readonly string[] TradeCategories =
+            {"gem", "weapon", "accessory", "armour", "jewel", "flask", "card", "currency", "map", "prophecy"};
+
         private JArray itemsData = new JArray();
         private readonly object itemsDataLocker = new object();
         private readonly Timer updateTimer = new Timer(3600 * 1000);
@@ -31,7 +33,7 @@ namespace Bot
 
         public JObject FirstOrDefault(Func<JToken, bool> predicate)
         {
-            lock (itemsDataLocker) return (JObject)itemsData.FirstOrDefault(predicate);
+            lock (itemsDataLocker) return (JObject) itemsData.FirstOrDefault(predicate);
         }
 
         public IEnumerable<JToken> Where(Func<JToken, bool> predicate)
@@ -61,12 +63,14 @@ namespace Bot
 
         public JArray Get(string category)
         {
-            return JArray.Parse(Common.GetContent("https://api.poe.watch/get?league=" + DefaultLeague + "&category=" + category));
+            return JArray.Parse(Common.GetContent("https://api.poe.watch/get?league=" + DefaultLeague + "&category=" +
+                                                  category));
         }
 
         public static JArray Get(string league, string category)
         {
-            return JArray.Parse(Common.GetContent("https://api.poe.watch/get?league=" + league + "&category=" + category));
+            return JArray.Parse(
+                Common.GetContent("https://api.poe.watch/get?league=" + league + "&category=" + category));
         }
 
         public static JArray Accounts(string character)
@@ -89,12 +93,15 @@ namespace Bot
             try
             {
                 var ja = Leagues();
-                DefaultLeague = ja.LastOrDefault(o => !o["hardcore"].Value<bool>() && !o["event"].Value<bool>() && o["challenge"].Value<bool>() && !o["upcoming"].Value<bool>())["name"].Value<string>();
+                DefaultLeague = ja.LastOrDefault(o =>
+                    !o["hardcore"].Value<bool>() && !o["event"].Value<bool>() && o["challenge"].Value<bool>() &&
+                    !o["upcoming"].Value<bool>())["name"].Value<string>();
             }
             catch (Exception e)
             {
                 Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
             }
+
             try
             {
                 lock (itemsDataLocker)
@@ -102,6 +109,7 @@ namespace Bot
                     itemsData.Clear();
                     itemsData = ItemData();
                 }
+
                 updateTimer.Interval = 3600 * 1000;
             }
             catch (Exception e)

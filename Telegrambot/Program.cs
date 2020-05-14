@@ -41,7 +41,7 @@ namespace Telegrambot
             _rssUpdate.AutoReset = true;
             _rssUpdate.Enabled = true;
 
-            var proxy = new HttpToSocks5Proxy("103.111.183.18",1080)
+            var proxy = new HttpToSocks5Proxy("103.111.183.18", 1080)
             {
                 ResolveHostnamesLocally = true
             };
@@ -67,21 +67,24 @@ namespace Telegrambot
                         if (sobaka[1] == "poeinfobot") e.Message.Text = sobaka[0];
                         else return;
                     }
-                    var chats = File.ReadAllLines(LangPath);//to do
-                    Poebot poebot = new Poebot(Poewatch, new TelegramPhoto(CachePath, e.Message.Chat.Id, _telegramBot));
-                    Stopwatch sw = new Stopwatch();
+
+                    var chats = File.ReadAllLines(LangPath); //to do
+                    var poebot = new Poebot(Poewatch, new TelegramPhoto(CachePath, e.Message.Chat.Id, _telegramBot));
+                    var sw = new Stopwatch();
                     sw.Start();
-                    string request = e.Message.Text;
+                    var request = e.Message.Text;
                     if (request.Contains("/sub ")) request += "+" + e.Message.Chat.Id + "+" + SubPath;
 
-                    Message message = poebot.ProcessRequest(request);
+                    var message = poebot.ProcessRequest(request);
                     if (message == null) return;
-                    if (message.Text != null) _telegramBot.SendTextMessageAsync(chatId: e.Message.Chat.Id, text: message.Text);
+                    if (message.Text != null)
+                        _telegramBot.SendTextMessageAsync(chatId: e.Message.Chat.Id, text: message.Text);
                     var content = message.Photo?.GetContent();
                     if (content != null)
                     {
                         _telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: content[0]);
                     }
+
                     sw.Stop();
                     if (!(request.Contains("/help") || request.Contains("/start")))
                         Log(request, message.Text ?? "", sw.ElapsedMilliseconds.ToString());
@@ -94,7 +97,7 @@ namespace Telegrambot
         {
             try
             {
-                List<string> subs = File.ReadAllLines(SubPath).ToList();
+                var subs = File.ReadAllLines(SubPath).ToList();
                 using (var r = XmlReader.Create("https://www.pathofexile.com/news/rss"))
                 {
                     var feed = SyndicationFeed.Load(r);
@@ -105,9 +108,11 @@ namespace Telegrambot
                         _lastEn = last;
                         var enSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sen"));
                         foreach (var sub in enSubs)
-                            _telegramBot.SendTextMessageAsync(chatId: long.Parse(sub.Split(' ')[0]), text: _lastEn.Title.Text + '\n' + _lastEn.Links[0].Uri);
+                            _telegramBot.SendTextMessageAsync(chatId: long.Parse(sub.Split(' ')[0]),
+                                text: _lastEn.Title.Text + '\n' + _lastEn.Links[0].Uri);
                     }
                 }
+
                 using (var r = XmlReader.Create("https://ru.pathofexile.com/news/rss"))
                 {
                     var feed = SyndicationFeed.Load(r);
@@ -118,7 +123,8 @@ namespace Telegrambot
                         _lastRu = last;
                         var ruSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sru"));
                         foreach (var sub in ruSubs)
-                            _telegramBot.SendTextMessageAsync(chatId: long.Parse(sub.Split(' ')[0]), text: _lastRu.Title.Text + '\n' + _lastRu.Links[0].Uri);
+                            _telegramBot.SendTextMessageAsync(chatId: long.Parse(sub.Split(' ')[0]),
+                                text: _lastRu.Title.Text + '\n' + _lastRu.Links[0].Uri);
                     }
                 }
             }
@@ -135,9 +141,10 @@ namespace Telegrambot
 
         private static void Log(string request, string responce, string time)
         {
-            using (StreamWriter streamWriter = new StreamWriter(LogPath, true, Encoding.Default))
+            using (var streamWriter = new StreamWriter(LogPath, true, Encoding.Default))
             {
-                streamWriter.WriteLine($"{DateTime.Now}\nЗапрос:\n{request}\n\nОтвет:\n{responce}\nВремя ответа: {time}\n------------");
+                streamWriter.WriteLine(
+                    $"{DateTime.Now}\nЗапрос:\n{request}\n\nОтвет:\n{responce}\nВремя ответа: {time}\n------------");
             }
         }
     }
