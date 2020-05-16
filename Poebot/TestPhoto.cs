@@ -12,24 +12,20 @@ namespace Bot
 
         public override bool SavePhoto(string name, byte[] bytes)
         {
-            using (var stream = new MemoryStream(bytes))
-            {
-                var bmp = new Bitmap(stream);
-                bmp.Save("image.png", ImageFormat.Png);
-                bmp.Dispose();
-            }
+            using var stream = new MemoryStream(bytes);
+            var bmp = new Bitmap(stream);
+            bmp.Save("image.png", ImageFormat.Png);
+            bmp.Dispose();
 
             return true;
         }
 
         public override bool UploadPhoto(byte[] bytes)
         {
-            using (var stream = new MemoryStream(bytes))
-            {
-                var bmp = new Bitmap(stream);
-                bmp.Save("image.png", ImageFormat.Png);
-                bmp.Dispose();
-            }
+            using var stream = new MemoryStream(bytes);
+            var bmp = new Bitmap(stream);
+            bmp.Save("image.png", ImageFormat.Png);
+            bmp.Dispose();
 
             return true;
         }

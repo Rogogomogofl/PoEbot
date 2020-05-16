@@ -65,43 +65,6 @@ namespace Bot
             }
         }
 
-        public string GetItemName(string search)
-        {
-            search = search.ToLower();
-            JArray result;
-            try
-            {
-                if (search[0] > 191)
-                    result = JArray.Parse(Common.GetContent(
-                        "https://pathofexile-ru.gamepedia.com/api.php?action=opensearch&search=" +
-                        search.Replace(" ", "+")));
-                else
-                    result = JArray.Parse(Common.GetContent(
-                        "https://pathofexile.gamepedia.com/api.php?action=opensearch&search=" +
-                        search.Replace(" ", "+")));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                return string.Empty;
-            }
-
-            if (result[3].Any())
-            {
-                return result[1][0].ToString();
-            }
-            else
-            {
-                var regex = new Regex($@"^{search.Replace(" ", @"\D*")}\D*");
-                var theRegex = new Regex($@"^the {search.Replace(" ", @"\D*")}\D*");
-                var item = poewatch.FirstOrDefault(o =>
-                    regex.IsMatch(o["name"].Value<string>().ToLower()) ||
-                    theRegex.IsMatch(o["name"].Value<string>().ToLower()));
-                if (item != null) return item["name"].Value<string>();
-                else return string.Empty;
-            }
-        }
-
         #endregion
 
         #region специальные внутренние методы
@@ -375,12 +338,10 @@ namespace Bot
                     CropGridlines = true
                 });
                 plot.Series.Add(series);
-                using (var memstream = new MemoryStream())
-                {
-                    var pngExporter = new PngExporter {Width = 1000, Height = 400, Background = OxyColors.White};
-                    pngExporter.Export(plot, memstream);
-                    plotBytes = memstream.ToArray();
-                }
+                using var memstream = new MemoryStream();
+                var pngExporter = new PngExporter {Width = 1000, Height = 400, Background = OxyColors.White};
+                pngExporter.Export(plot, memstream);
+                plotBytes = memstream.ToArray();
             }
 
             photo.UploadPhoto(plotBytes);
@@ -403,7 +364,8 @@ namespace Bot
             var searchResults = items.Select(o => o["name"].Value<string>()).Distinct();
             if (searchResults.Count() > 30)
                 return new Message("Найдено слишком много возможных вариантов. Уточните запрос");
-            if (!searchResults.Any()) return new Message($"По запросу {req} ничего не найдено");
+            if (!searchResults.Any())
+                return new Message($"По запросу {req} ничего не найдено");
             return new Message($"Возможно вы искали:\n{string.Join("\n", searchResults)}");
         }
 
@@ -560,8 +522,8 @@ namespace Bot
                 var regex = new Regex($@"^{search.Replace(" ", @"\D*")}\D*");
                 var theRegex = new Regex($@"^the {search.Replace(" ", @"\D*")}\D*");
                 var item = poewatch.FirstOrDefault(o =>
-                    (regex.IsMatch(o["name"].Value<string>().ToLower()) ||
-                     theRegex.IsMatch(o["name"].Value<string>().ToLower())));
+                    regex.IsMatch(o["name"].Value<string>().ToLower()) ||
+                     theRegex.IsMatch(o["name"].Value<string>().ToLower()));
                 if (item != null)
                 {
                     name = item["name"].Value<string>();
@@ -617,56 +579,50 @@ namespace Bot
 
                     try
                     {
-                        using (var driver = new ChromeDriver(driverDirectory, options))
+                        using var driver = new ChromeDriver(driverDirectory, options);
+                        driver.Navigate().GoToUrl(url);
+                        System.Threading.Thread.Sleep(4000);
+                        var bytes = driver.GetScreenshot().AsByteArray;
+                        var normalizeHeight = true;
+                        IWebElement element;
+                        if (poewatch.FirstOrDefault(o => o["name"].Value<string>() == name) != null)
                         {
-                            driver.Navigate().GoToUrl(url);
-                            System.Threading.Thread.Sleep(4000);
-                            var bytes = driver.GetScreenshot().AsByteArray;
-                            var normalizeHeight = true;
-                            IWebElement element;
-                            if (poewatch.FirstOrDefault(o => o["name"].Value<string>() == name) != null)
-                            {
-                                element = driver.FindElementByCssSelector(".infobox-page-container");
-                            }
-                            else
-                            {
-                                element = driver.FindElementByCssSelector(".infocard");
-                                normalizeHeight = false;
-                            }
-
-                            using (var bytesStream = new MemoryStream(bytes))
-                            using (var screenshot = new Bitmap(bytesStream))
-                            {
-                                //to do: Смещение кадра выше, пока не будет нижняя рамка
-                                var y = element.Location.Y;
-                                if (normalizeHeight)
-                                    for (; y > 0; y--)
-                                    {
-                                        var pixel = screenshot.GetPixel(element.Location.X,
-                                            y + element.Size.Height - 1);
-
-                                        if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 2) !=
-                                            Color.FromArgb(255, 0, 0, 0)) continue;
-                                        if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 1) !=
-                                            pixel) continue;
-                                        if (screenshot.GetPixel(element.Location.X, y + element.Size.Height - 2) !=
-                                            pixel) continue;
-                                        break;
-                                    }
-
-                                if (y == 1) throw new Exception("Ошибка поиска границ инфокарточки");
-
-                                var croppedImage = new Rectangle(element.Location.X, y,
-                                    element.Size.Width, element.Size.Height);
-                                using (var memoryStream = new MemoryStream())
-                                {
-                                    screenshot.Clone(croppedImage, screenshot.PixelFormat).Save(memoryStream,
-                                        System.Drawing.Imaging.ImageFormat.Png);
-                                    photo.SavePhoto(name.Replace(' ', '-').Replace("'", "").ToLower(),
-                                        memoryStream.ToArray());
-                                }
-                            }
+                            element = driver.FindElementByCssSelector(".infobox-page-container");
                         }
+                        else
+                        {
+                            element = driver.FindElementByCssSelector(".infocard");
+                            normalizeHeight = false;
+                        }
+
+                        using var bytesStream = new MemoryStream(bytes);
+                        using var screenshot = new Bitmap(bytesStream);
+                        //to do: Смещение кадра выше, пока не будет нижняя рамка
+                        var y = element.Location.Y;
+                        if (normalizeHeight)
+                            for (; y > 0; y--)
+                            {
+                                var pixel = screenshot.GetPixel(element.Location.X,
+                                    y + element.Size.Height - 1);
+
+                                if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 2) !=
+                                    Color.FromArgb(255, 0, 0, 0)) continue;
+                                if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 1) !=
+                                    pixel) continue;
+                                if (screenshot.GetPixel(element.Location.X, y + element.Size.Height - 2) !=
+                                    pixel) continue;
+                                break;
+                            }
+
+                        if (y == 1) throw new Exception("Ошибка поиска границ инфокарточки");
+
+                        var croppedImage = new Rectangle(element.Location.X, y,
+                            element.Size.Width, element.Size.Height);
+                        using var memoryStream = new MemoryStream();
+                        screenshot.Clone(croppedImage, screenshot.PixelFormat).Save(memoryStream,
+                            System.Drawing.Imaging.ImageFormat.Png);
+                        photo.SavePhoto(name.Replace(' ', '-').Replace("'", "").ToLower(),
+                            memoryStream.ToArray());
                     }
                     catch (Exception e)
                     {
@@ -700,22 +656,20 @@ namespace Bot
                 }
             }
 
-            using (var wc = new WebClient())
+            using var wc = new WebClient();
+            var date1 = DateTime.Today;
+            var layouturl = "https://www.poelab.com/wp-content/labfiles/" +
+                            $"{date1.Year}-{string.Format("{0:00}", date1.Month) + "-" + string.Format("{0:00}", date1.Day)}_{search}.jpg";
+            try
             {
-                var date1 = DateTime.Today;
-                var layouturl = "https://www.poelab.com/wp-content/labfiles/" +
-                                $"{date1.Year}-{string.Format("{0:00}", date1.Month) + "-" + string.Format("{0:00}", date1.Day)}_{search}.jpg";
-                try
-                {
-                    var data = wc.DownloadData(layouturl);
-                    photo.UploadPhoto(data);
-                    return new Message(photo: photo);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                    return new Message("В данный момент сервис недоступен");
-                }
+                var data = wc.DownloadData(layouturl);
+                photo.UploadPhoto(data);
+                return new Message(photo: photo);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
+                return new Message("В данный момент сервис недоступен");
             }
         }
 
@@ -901,15 +855,12 @@ namespace Bot
                 var title = hd.DocumentNode.SelectSingleNode("//h1[contains(@class, '_eYtD2XCVieq6emjKBH3m')]")
                     .InnerText.Replace("&#x27;", "'");
                 var node = hd.DocumentNode.SelectSingleNode("//a[contains(@class, 'b5szba-0')]");
-                if (node == null)
-                    node = hd.DocumentNode.SelectSingleNode("//img[contains(@class, '_2_tDEnGMLxpM6uOa2kaDB3')]")
+                node ??= hd.DocumentNode.SelectSingleNode("//img[contains(@class, '_2_tDEnGMLxpM6uOa2kaDB3')]")
                         .ParentNode;
-                using (var wc = new WebClient())
-                {
-                    var data = wc.DownloadData(node.Attributes["href"].Value);
-                    photo.UploadPhoto(data);
-                    return new Message(text: title, photo: photo);
-                }
+                using var wc = new WebClient();
+                var data = wc.DownloadData(node.Attributes["href"].Value);
+                photo.UploadPhoto(data);
+                return new Message(text: title, photo: photo);
             }
             catch (Exception e)
             {

@@ -77,14 +77,10 @@ namespace Telegrambot
             {
                 try
                 {
-                    using (var stream = new MemoryStream(bytes))
-                    {
-                        var returnedMessage = _botClient.SendPhotoAsync(chatId: Id, photo: stream).Result;
-                        using (var streamWriter = new StreamWriter(CachePath, true, Encoding.Default))
-                        {
-                            streamWriter.WriteLine("{0} {1}", name, returnedMessage.Photo.Last().FileId);
-                        }
-                    }
+                    using var stream = new MemoryStream(bytes);
+                    var returnedMessage = _botClient.SendPhotoAsync(chatId: Id, photo: stream).Result;
+                    using var streamWriter = new StreamWriter(CachePath, true, Encoding.Default);
+                    streamWriter.WriteLine("{0} {1}", name, returnedMessage.Photo.Last().FileId);
                 }
                 catch (Exception e)
                 {
@@ -100,11 +96,9 @@ namespace Telegrambot
             {
                 try
                 {
-                    using (var stream = new MemoryStream(bytes))
-                    {
-                        var returnedMessage = _botClient.SendPhotoAsync(chatId: Id, photo: stream).Result;
-                        _content = new[] {returnedMessage.Photo.Last().FileId};
-                    }
+                    using var stream = new MemoryStream(bytes);
+                    var returnedMessage = _botClient.SendPhotoAsync(chatId: Id, photo: stream).Result;
+                    _content = new[] {returnedMessage.Photo.Last().FileId};
                 }
                 catch (Exception e)
                 {
