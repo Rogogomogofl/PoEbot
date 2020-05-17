@@ -1,16 +1,16 @@
-﻿namespace Bot
+﻿namespace BotHandlers.Abstracts
 {
     public abstract class AbstractPhoto
     {
         public readonly string CachePath;
         public readonly long Id;
-        protected string[] _content;
+        protected string[] Content;
 
-        public AbstractPhoto(string cachePath, long id)
+        protected AbstractPhoto(string cachePath, long id)
         {
             CachePath = cachePath;
             Id = id;
-            _content = null;
+            Content = null;
         }
 
         public abstract bool SavePhoto(string name, byte[] bytes);

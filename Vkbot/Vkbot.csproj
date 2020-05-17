@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{3D559D58-AFEF-4CD2-93B5-82F5A0B31F2D}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Vkbot</RootNamespace>
-    <AssemblyName>Vkbot</AssemblyName>
+    <RootNamespace>VkBot</RootNamespace>
+    <AssemblyName>VkBot</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -45,6 +45,9 @@
     <Reference Include="HtmlAgilityPack, Version=1.11.23.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
       <HintPath>..\packages\HtmlAgilityPack.1.11.23\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
+    <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Extensions.DependencyInjection, Version=2.2.0.0, Culture=neutral, PublicKeyToken=8df3f1eee85cc956, processorArchitecture=MSIL">
       <HintPath>..\packages\NetFx.Extensions.DependencyInjection.2.2.0\lib\net451\Microsoft.Extensions.DependencyInjection.dll</HintPath>
     </Reference>
@@ -80,9 +83,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Poebot\Poebot.csproj">
-      <Project>{87d6f502-4b85-4576-9bcb-f6749faa0813}</Project>
-      <Name>Poebot</Name>
+    <ProjectReference Include="..\BotHandlers\BotHandlers.csproj">
+      <Project>{1e424885-d459-4ed6-bba5-95b4db77dedc}</Project>
+      <Name>BotHandlers</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

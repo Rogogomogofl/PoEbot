@@ -1,4 +1,6 @@
-﻿namespace Bot
+﻿using BotHandlers.Abstracts;
+
+namespace BotHandlers
 {
     public class Message
     {

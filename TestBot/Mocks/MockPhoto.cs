@@ -1,14 +1,14 @@
 ﻿using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using BotHandlers;
+using BotHandlers.Abstracts;
 
-namespace Bot
+namespace TestBot.Mocks
 {
-    public class TestPhoto : AbstractPhoto
+    internal class MockPhoto : AbstractPhoto
     {
-        public TestPhoto(string cachePath = null, long id = 0) : base(cachePath, id)
-        {
-        }
+        public MockPhoto(string cachePath = null, long id = 0) : base(cachePath, id){}
 
         public override bool SavePhoto(string name, byte[] bytes)
         {

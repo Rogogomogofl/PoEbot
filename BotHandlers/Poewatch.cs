@@ -1,10 +1,10 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
+using Newtonsoft.Json.Linq;
 
-namespace Bot
+namespace BotHandlers
 {
     public class Poewatch
     {
@@ -58,19 +58,18 @@ namespace Bot
 
         public static JArray ItemHistory(string id, string league)
         {
-            return JArray.Parse(Common.GetContent("https://api.poe.watch/itemhistory?id=" + id + "&league=" + league));
+            return JArray.Parse(Common.GetContent("https://api.poe.watch/itemhistory?id=" + $"{id}&league={league}"));
         }
 
         public JArray Get(string category)
         {
-            return JArray.Parse(Common.GetContent("https://api.poe.watch/get?league=" + DefaultLeague + "&category=" +
-                                                  category));
+            return JArray.Parse(Common.GetContent("https://api.poe.watch/get?league=" + $"{DefaultLeague}&category={category}"));
         }
 
         public static JArray Get(string league, string category)
         {
             return JArray.Parse(
-                Common.GetContent("https://api.poe.watch/get?league=" + league + "&category=" + category));
+                Common.GetContent("https://api.poe.watch/get?league=" + $"{league}&category={category}"));
         }
 
         public static JArray Accounts(string character)
@@ -99,7 +98,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
+                Logger.Log.Error($"{e.Message} at {GetType()}");
             }
 
             try
@@ -114,7 +113,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
+                Logger.Log.Error($"{e.Message} at {GetType()}");
                 updateTimer.Interval = 5000;
             }
         }

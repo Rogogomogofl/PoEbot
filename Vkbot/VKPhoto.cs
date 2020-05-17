@@ -3,25 +3,26 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using Bot;
+using BotHandlers;
+using BotHandlers.Abstracts;
 using VkNet.Abstractions;
 
-namespace Vkbot
+namespace VkBot
 {
     public class VkPhoto : AbstractPhoto
     {
-        private readonly IPhotoCategory _vkPhoto;
+        private readonly IPhotoCategory vkPhoto;
 
         public VkPhoto(string cahePath, long id, IPhotoCategory photo) : base(cahePath, id)
         {
-            _vkPhoto = photo;
+            vkPhoto = photo;
         }
 
         public override bool SavePhoto(string name, byte[] bytes)
         {
             try
             {
-                var uploadServer = _vkPhoto.GetMessagesUploadServer(Id);
+                var uploadServer = vkPhoto.GetMessagesUploadServer(Id);
                 string result;
                 using (var requestContent = new MultipartFormDataContent())
                 using (var imageContent = new ByteArrayContent(bytes))
@@ -35,18 +36,18 @@ namespace Vkbot
                     }
                 }
 
-                var photo = _vkPhoto.SaveMessagesPhoto(result);
+                var photo = vkPhoto.SaveMessagesPhoto(result);
                 using (var stream = new StreamWriter(CachePath, true, Encoding.Default))
                 {
                     stream.WriteLine("{0} {1} {2}", name, photo[0].Id, photo[0].OwnerId);
                 }
 
-                _content = new[] {photo[0].Id.ToString(), photo[0].OwnerId.ToString()};
+                Content = new[] {photo[0].Id.ToString(), photo[0].OwnerId.ToString()};
                 return true;
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
+                Logger.Log.Error($"{e.Message} at {GetType()}");
                 return false;
             }
         }
@@ -60,7 +61,7 @@ namespace Vkbot
                 var data = line.Split(' ');
                 if (data[0] == item)
                 {
-                    _content = new[] {data[1], data[2]};
+                    Content = new[] {data[1], data[2]};
                     return true;
                 }
             }
@@ -74,17 +75,17 @@ namespace Vkbot
             {
                 case "delve":
                 {
-                    _content = new[] {"456241317", "37321011"};
+                    Content = new[] {"456241317", "37321011"};
                     return true;
                 }
                 case "incursion":
                 {
-                    _content = new[] {"456241318", "37321011"};
+                    Content = new[] {"456241318", "37321011"};
                     return true;
                 }
                 case "betrayal":
                 {
-                    _content = new[] {"457242989", "37321011"};
+                    Content = new[] {"457242989", "37321011"};
                     return true;
                 }
                 /*case "all":
@@ -100,14 +101,14 @@ namespace Vkbot
 
         public override string[] GetContent()
         {
-            return (string[]) _content?.Clone();
+            return (string[]) Content?.Clone();
         }
 
         public override bool UploadPhoto(byte[] bytes)
         {
             try
             {
-                var uploadServer = _vkPhoto.GetMessagesUploadServer(Id);
+                var uploadServer = vkPhoto.GetMessagesUploadServer(Id);
                 string result;
                 using (var requestContent = new MultipartFormDataContent())
                 using (var imageContent = new ByteArrayContent(bytes))
@@ -121,13 +122,13 @@ namespace Vkbot
                     }
                 }
 
-                var photo = _vkPhoto.SaveMessagesPhoto(result);
-                _content = new[] {photo[0].Id.ToString(), photo[0].OwnerId.ToString()};
+                var photo = vkPhoto.SaveMessagesPhoto(result);
+                Content = new[] {photo[0].Id.ToString(), photo[0].OwnerId.ToString()};
                 return true;
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
+                Logger.Log.Error($"{e.Message} at {GetType()}");
                 return false;
             }
         }

@@ -1,20 +1,20 @@
-﻿using Bot;
-using MihaZupan;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.ServiceModel.Syndication;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Xml;
+using BotHandlers;
+using MihaZupan;
 using Telegram.Bot;
+using Telegram.Bot.Args;
 
-namespace Telegrambot
+namespace TelegramBot
 {
     internal class Program
     {
@@ -22,10 +22,10 @@ namespace Telegrambot
         private const string SubPath = @"bot/telegramsub.txt";
         private const string CachePath = @"bot/telegramcache.txt";
         private const string LangPath = @"bot/telegramlang.txt";
-        private const string LogPath = @"bot/telegramlog.txt";
         private static readonly Poewatch Poewatch = new Poewatch();
         private static SyndicationItem _lastEn, _lastRu;
         private static Timer _rssUpdate;
+        private static readonly Dictionary<long, ResponceLanguage> LangsDictionary = new Dictionary<long, ResponceLanguage>();
 
         private static void Main()
         {
@@ -34,7 +34,10 @@ namespace Telegrambot
             if (!File.Exists(SubPath)) File.Create(SubPath).Close();
             if (!File.Exists(CachePath)) File.Create(CachePath).Close();
             if (!File.Exists(LangPath)) File.Create(LangPath).Close();
-            if (!File.Exists(LogPath)) File.Create(LogPath).Close();
+
+            Logger.InitLogger();
+
+            ChatLanguage.LoadDictionary(LangPath, LangsDictionary);
 
             _rssUpdate = new Timer(5 * 60 * 1000);
             _rssUpdate.Elapsed += UpdateRss;
@@ -50,10 +53,11 @@ namespace Telegrambot
             _telegramBot.OnMessage += TelegramBot_OnMessage;
             _telegramBot.StartReceiving();
             Console.WriteLine("Working");
+            Logger.Log.Info("Working");
             while (true) ;
         }
 
-        private static async void TelegramBot_OnMessage(object sender, Telegram.Bot.Args.MessageEventArgs e)
+        private static async void TelegramBot_OnMessage(object sender, MessageEventArgs e)
         {
 #pragma warning disable CA2007 // Попробуйте вызвать ConfigureAwait для ожидаемой задачи
             await Task.Run(() =>
@@ -69,7 +73,9 @@ namespace Telegrambot
                     }
 
                     var chats = File.ReadAllLines(LangPath); //to do
-                    var poebot = new Poebot(Poewatch, new TelegramPhoto(CachePath, e.Message.Chat.Id, _telegramBot));
+                    var poebot = new Poebot(Poewatch, 
+                                            new TelegramPhoto(CachePath, e.Message.Chat.Id, _telegramBot),
+                                            new ChatLanguage(LangPath, e.Message.Chat.Id, LangsDictionary));
                     var sw = new Stopwatch();
                     sw.Start();
                     var request = e.Message.Text;
@@ -87,7 +93,7 @@ namespace Telegrambot
 
                     sw.Stop();
                     if (!(request.Contains("/help") || request.Contains("/start")))
-                        Log(request, message.Text ?? "", sw.ElapsedMilliseconds.ToString());
+                        Logger.Log.Info($"Запрос: {request}\n\nОтвет:\n{message.Text ?? ""}\nВремя ответа: {sw.ElapsedMilliseconds}");
                 }
             });
 #pragma warning restore CA2007 // Попробуйте вызвать ConfigureAwait для ожидаемой задачи
@@ -130,20 +136,13 @@ namespace Telegrambot
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now}: {ex.Message} at {GetType()}");
+                Logger.Log.Error($"{ex.Message} at {GetType()}");
             }
         }
 
         public new static Type GetType()
         {
             return typeof(Program);
-        }
-
-        private static void Log(string request, string responce, string time)
-        {
-            using var streamWriter = new StreamWriter(LogPath, true, Encoding.Default);
-            streamWriter.WriteLine(
-                $"{DateTime.Now}\nЗапрос:\n{request}\n\nОтвет:\n{responce}\nВремя ответа: {time}\n------------");
         }
     }
 }

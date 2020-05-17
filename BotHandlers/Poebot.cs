@@ -1,12 +1,4 @@
-﻿using HtmlAgilityPack;
-using Newtonsoft.Json.Linq;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
-using OxyPlot;
-using OxyPlot.Axes;
-using OxyPlot.Series;
-using OxyPlot.WindowsForms;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -14,8 +6,19 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
+using BotHandlers.Abstracts;
+using HtmlAgilityPack;
+using Newtonsoft.Json.Linq;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
+using OxyPlot.WindowsForms;
+using ImageFormat = System.Drawing.Imaging.ImageFormat;
 
-namespace Bot
+namespace BotHandlers
 {
     public class Poebot
     {
@@ -26,11 +29,13 @@ namespace Bot
         private readonly object screenshotLocker = new object();
         private readonly Poewatch poewatch;
         private readonly AbstractPhoto photo;
+        private readonly AbstractChatLanguage chatLanguage;
 
-        public Poebot(Poewatch poewatch, AbstractPhoto photo, string language = "ru")
+        public Poebot(Poewatch poewatch, AbstractPhoto photo, AbstractChatLanguage chatLanguage)
         {
             this.poewatch = poewatch;
             this.photo = photo;
+            this.chatLanguage = chatLanguage;
         }
 
         #region внешние методы
@@ -39,7 +44,7 @@ namespace Bot
         {
             if (!poewatch.IsDataLoaded())
             {
-                return new Message("В данный момент сервер с базой данных недоступен");
+                return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
 
             if (commandReg.IsMatch(request))
@@ -49,20 +54,18 @@ namespace Bot
                 if (string.IsNullOrEmpty(param) && command != "help" && command != "start") command = "err";
                 return BotCommand(command, param);
             }
-            else
+
+            if (Regex.IsMatch(request, @"www.reddit.com/r/\S+"))
             {
-                if (Regex.IsMatch(request, @"www.reddit.com/r/\S+"))
-                {
-                    return SendRedditImage(request);
-                }
-
-                if (Regex.IsMatch(request, @"pastebin[.]com/\S+"))
-                {
-                    return SendPobPartyLink(request);
-                }
-
-                return null;
+                return SendRedditImage(request);
             }
+
+            if (Regex.IsMatch(request, @"pastebin[.]com/\S+"))
+            {
+                return SendPobPartyLink(request);
+            }
+
+            return null;
         }
 
         #endregion
@@ -81,85 +84,26 @@ namespace Bot
 
         private Message BotCommand(string command, string param)
         {
-            var errResp =
-                "Неопознанный синтаксис команды. Смотри список доступных команд в описании бота или используй команду /help";
-            switch (command)
+            var errResp = ResponseDictionary.UnidentifiedCommand(chatLanguage.Language);
+            return command switch
             {
-                case "start":
-                {
-                    return new Message(
-                        "Привет, я информационный бот-помощник по игре Path of Exile. Могу выдавать разную полезную информацию или присылать новости. Используй комманду /help, чтобы увидеть список всех команд");
-                }
-                case "w":
-                {
-                    return new Message(text: ItemSearch(param).url);
-                }
-                case "p":
-                {
-                    return TradeSearch(param);
-                }
-                case "c":
-                {
-                    return GetCharInfo(param);
-                }
-                case "cl":
-                {
-                    return GetCharList(param);
-                }
-                case "b":
-                {
-                    return PoeninjaBuilds(param);
-                }
-                case "err":
-                {
-                    return new Message(errResp);
-                }
-                case "i":
-                {
-                    return WikiScreenshot(param);
-                }
-                case "l":
-                {
-                    return LabLayout(param);
-                }
-                case "h":
-                {
-                    return LeagueHint(param);
-                }
-                case "top":
-                {
-                    return TopPrices(param);
-                }
-                case "hm":
-                {
-                    return HelpMe(param);
-                }
-                case "help":
-                {
-                    return new Message("Список доступных команд:" +
-                                       "\n/w название - Ссылка на wiki по запросу" +
-                                       "\n/p предмет [6l или 5l] [| лига] - Цена предмета с графиком изменения. Опционально 5 или 6 линков и выбор лиги" +
-                                       "\n/c имя героя полностью - Ссылка на профиль героя" +
-                                       "\n/cl имя профиля полностью - Вывод всех персонажей профиля" +
-                                       "\n/b предмет, камень умения или значимое пассивное умение - Вывод билдов на ниндзе с вещами из запроса. Можно указывать несколько вещей, разделенных знаком +" +
-                                       "\n/i название - Скрин с wiki по запросу (работает медленно, проявите терпение:))" +
-                                       "\n/l название или номер лабиринта - Вывод картинки с лайаутом выбранного лабиринта на сегодня" +
-                                       "\n/h название лиги - Вывод картинки с подсказками к лиге" +
-                                       "\n/sub en или /sub ru - Подписка беседы на новости на соответствующем языке" +
-                                       "\n/top категория [количество] [группа] - Вывод топа предметов по цене из указанной категории. По умолчанию количество = 10, группы все" +
-                                       "\n/hm название - Подсказка всех предметов по названию" +
-                                       "\n\nЗапрос можно писать сокращено, если не указано обратное (например /p xo hea вместо /p Xoph's Heart). Команды /p, /b, /l, /h, /top и /hm работают только с запросами на английском языке, все остальные также понимают русский"
-                    );
-                }
-                case "sub":
-                {
-                    return SubToRss(param);
-                }
-                default:
-                {
-                    return new Message(errResp);
-                }
-            }
+                "start" => new Message(ResponseDictionary.HelloMessage(chatLanguage.Language)),
+                "w" => new Message(text: ItemSearch(param).url),
+                "p" => TradeSearch(param),
+                "c" => GetCharInfo(param),
+                "cl" => GetCharList(param),
+                "b" => PoeninjaBuilds(param),
+                "err" => new Message(errResp),
+                "i" => WikiScreenshot(param),
+                "l" => LabLayout(param),
+                "h" => LeagueHint(param),
+                "top" => TopPrices(param),
+                "hm" => HelpMe(param),
+                "help" => new Message(ResponseDictionary.HelpMessage(chatLanguage.Language)),
+                "sub" => SubToRss(param),
+                "lang" => ChangeResponseLanguage(param),
+                _ => new Message(errResp)
+            };
         }
 
         private Message TradeSearch(string srch)
@@ -179,13 +123,11 @@ namespace Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                    return new Message("В данный момент сервер с базой данных недоступен");
+                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
                 }
 
-                var leagues = "";
-                foreach (var el in leaguesja)
-                    leagues += el["name"].Value<string>() + "\n";
+                var leagues = leaguesja.Aggregate("", (current, el) => current + el["name"].Value<string>() + "\n");
                 try
                 {
                     var ln = srch.Substring(srch.IndexOf('|') + 1).Trim(' ');
@@ -198,7 +140,7 @@ namespace Bot
                 }
                 catch
                 {
-                    return new Message("Некорректный ключ лиги. Список доступных лиг:\n" + leagues);
+                    return new Message(ResponseDictionary.IncorrectLeagueKey(chatLanguage.Language, leagues));
                 }
             }
 
@@ -217,8 +159,8 @@ namespace Bot
                 && (o["variation"] == null || o["variation"].Value<string>() == "1 socket")
                 && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
             if (!tmp?.Any() ?? true)
-                return new Message(
-                    $"По запросу \"{srch}\"{(!string.IsNullOrEmpty(links) ? " " + links + "L" : "")} не удалось получить данные о ценах");
+                return new Message(ResponseDictionary.UnableToObtainPrice(chatLanguage.Language, srch , links));
+            
             foreach (var token in tmp)
             {
                 try
@@ -227,8 +169,8 @@ namespace Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                    return new Message("В данный момент сервер с базой данных недоступен");
+                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
                 }
 
                 ja = jo["leagues"].Value<JArray>();
@@ -281,8 +223,8 @@ namespace Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                    return new Message("В данный момент сервер с базой данных недоступен");
+                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
                 }
             }
 
@@ -294,14 +236,14 @@ namespace Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                    return new Message("В данный момент сервер с базой данных недоступен");
+                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
                 }
             }
 
             ja = JArray.Parse(jo["leagues"].ToString());
             jo = ja.Children<JObject>().FirstOrDefault(o => o["name"].Value<string>() == league);
-            if (jo == null) return new Message($"О предмете {name} на лиге {league} нет данных о цене");
+            if (jo == null) return new Message(ResponseDictionary.NoPriceData(chatLanguage.Language, name, league));
 
             byte[] plotBytes = null;
             if (history.Count != 0)
@@ -328,7 +270,7 @@ namespace Bot
                 plot.Axes.Add(new LinearAxis
                 {
                     Position = AxisPosition.Left,
-                    Title = "Цена в хаосах",
+                    Title = ResponseDictionary.PlotTitle(chatLanguage.Language),
                     MajorGridlineThickness = 1,
                     MajorGridlineColor = OxyColor.FromRgb(211, 211, 211),
                     MajorGridlineStyle = LineStyle.Dash,
@@ -347,10 +289,7 @@ namespace Bot
             photo.UploadPhoto(plotBytes);
             return new Message
             (
-                $"Цены на {name}{(!string.IsNullOrEmpty(links) ? " " + links + "L" : "")} (лига {league})"
-                + $"\nМинимальная: {Regex.Match((string) jo["min"], @"\d+[.]?\d{0,2}")}c"
-                + $"\nСредняя: {Regex.Match((string) jo["median"], @"\d+[.]?\d{0,2}")}c"
-                + $" ({Regex.Match((string) jo["exalted"], @"\d+[.]?\d{0,2}")}ex)\nСсылка на трейд: {tradelink}",
+                ResponseDictionary.PriceResponce(chatLanguage.Language, name, links, league, tradelink, jo),
                 photo
             );
         }
@@ -363,10 +302,10 @@ namespace Bot
                                             && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
             var searchResults = items.Select(o => o["name"].Value<string>()).Distinct();
             if (searchResults.Count() > 30)
-                return new Message("Найдено слишком много возможных вариантов. Уточните запрос");
+                return new Message(ResponseDictionary.ToManyResults(chatLanguage.Language));
             if (!searchResults.Any())
-                return new Message($"По запросу {req} ничего не найдено");
-            return new Message($"Возможно вы искали:\n{string.Join("\n", searchResults)}");
+                return new Message(ResponseDictionary.NoResults(chatLanguage.Language, req));
+            return new Message(ResponseDictionary.PossibleVariants(chatLanguage.Language, searchResults));
         }
 
         private Message PoeninjaBuilds(string srch)
@@ -400,7 +339,7 @@ namespace Bot
                     }
                     catch
                     {
-                        return new Message($"Не удалось определить \"{item}\"");
+                        return new Message(ResponseDictionary.CouldntDetermine(chatLanguage.Language, item));
                     }
 
                     category = "keystone";
@@ -441,7 +380,7 @@ namespace Bot
                     case "gem":
                     {
                         if (jo["group"].Value<string>() == "support")
-                            return new Message("Камни поддержки не поддерживаются этой командой");
+                            return new Message(ResponseDictionary.SupportsNotSupported(chatLanguage.Language));
                         skills.Add(result);
                         break;
                     }
@@ -452,12 +391,12 @@ namespace Bot
                     }
                     default:
                     {
-                        return new Message("Не удалось определить \"" + item + "\"");
+                        return new Message(ResponseDictionary.CouldntDetermine(chatLanguage.Language, item));
                     }
                 }
             }
 
-            string fstRetStr = "Билды которые используют", sndRetStr = ":\nhttps://poe.ninja/challenge/builds?";
+            string fstRetStr = ResponseDictionary.BuildsThatUse(chatLanguage.Language), sndRetStr = ":\nhttps://poe.ninja/challenge/builds?";
             if (uniques.Count > 0)
             {
                 sndRetStr += "item=";
@@ -508,8 +447,8 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                return ("", "В данный момент сервер с базой данных недоступен");
+                Logger.Log.Error($"{e.Message} at {GetType()}");
+                return ("", ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
 
             if (result[3].Any())
@@ -523,13 +462,13 @@ namespace Bot
                 var theRegex = new Regex($@"^the {search.Replace(" ", @"\D*")}\D*");
                 var item = poewatch.FirstOrDefault(o =>
                     regex.IsMatch(o["name"].Value<string>().ToLower()) ||
-                     theRegex.IsMatch(o["name"].Value<string>().ToLower()));
+                    theRegex.IsMatch(o["name"].Value<string>().ToLower()));
                 if (item != null)
                 {
                     name = item["name"].Value<string>();
                     url = $"https://pathofexile.gamepedia.com/{name.Replace(' ', '_')}";
                 }
-                else return ("", $"По запросу \"{search}\" ничего не найдено");
+                else return ("", ResponseDictionary.NoResults(chatLanguage.Language, search));
             }
 
             return (name, url);
@@ -573,7 +512,7 @@ namespace Bot
                         }
                         default:
                         {
-                            return new Message("Что-то пошло не так");
+                            return new Message(ResponseDictionary.SomethingWrong(chatLanguage.Language));
                         }
                     }
 
@@ -581,7 +520,7 @@ namespace Bot
                     {
                         using var driver = new ChromeDriver(driverDirectory, options);
                         driver.Navigate().GoToUrl(url);
-                        System.Threading.Thread.Sleep(4000);
+                        Thread.Sleep(4000);
                         var bytes = driver.GetScreenshot().AsByteArray;
                         var normalizeHeight = true;
                         IWebElement element;
@@ -597,7 +536,7 @@ namespace Bot
 
                         using var bytesStream = new MemoryStream(bytes);
                         using var screenshot = new Bitmap(bytesStream);
-                        //to do: Смещение кадра выше, пока не будет нижняя рамка
+
                         var y = element.Location.Y;
                         if (normalizeHeight)
                             for (; y > 0; y--)
@@ -614,20 +553,20 @@ namespace Bot
                                 break;
                             }
 
-                        if (y == 1) throw new Exception("Ошибка поиска границ инфокарточки");
+                        if (y == 1) throw new Exception(ResponseDictionary.ImageFailed(chatLanguage.Language, name));
 
                         var croppedImage = new Rectangle(element.Location.X, y,
                             element.Size.Width, element.Size.Height);
                         using var memoryStream = new MemoryStream();
                         screenshot.Clone(croppedImage, screenshot.PixelFormat).Save(memoryStream,
-                            System.Drawing.Imaging.ImageFormat.Png);
+                            ImageFormat.Png);
                         photo.SavePhoto(name.Replace(' ', '-').Replace("'", "").ToLower(),
                             memoryStream.ToArray());
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                        return new Message("Не удалось вывести изображение этой статьи");
+                        Logger.Log.Error($"{e.Message} at {GetType()}");
+                        return new Message();
                     }
                 }
             }
@@ -651,15 +590,16 @@ namespace Bot
                         search = layout;
                         break;
                     }
-                    else if (layout == labLayouts.Last())
-                        return new Message("Неверно задана сложность лабиринта");
+
+                    if (layout == labLayouts.Last())
+                        return new Message(ResponseDictionary.IncorrectLabDifficulty(chatLanguage.Language));
                 }
             }
 
             using var wc = new WebClient();
-            var date1 = DateTime.Today;
+            var date = DateTime.Today;
             var layouturl = "https://www.poelab.com/wp-content/labfiles/" +
-                            $"{date1.Year}-{string.Format("{0:00}", date1.Month) + "-" + string.Format("{0:00}", date1.Day)}_{search}.jpg";
+                            $"{date.Year}-{date.Month:00}-{date.Day:00}_{search}.jpg";
             try
             {
                 var data = wc.DownloadData(layouturl);
@@ -668,8 +608,8 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                return new Message("В данный момент сервис недоступен");
+                Logger.Log.Error($"{e.Message} at {GetType()}");
+                return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
         }
 
@@ -678,22 +618,18 @@ namespace Bot
             var hint = hints.FirstOrDefault(o => Regex.IsMatch(o, $@"^{request.ToLower()}"));
             if (!photo.GetPresetPhoto(hint))
             {
-                return new Message(
-                    $"Не удалось вывести подсказку по запросу {request}\nПодсказки доступны по запросам: {string.Join(", ", hints)}");
+                return new Message(ResponseDictionary.IncorrectHintKey(chatLanguage.Language, request, hints));
             }
-            else
-            {
-                return new Message(photo: photo);
-            }
+
+            return new Message(photo: photo);
         }
 
         private Message TopPrices(string request)
         {
-            var formatHint = "Формат сообщения: category [quantity] [group]\nПо умолчанию quantity = 10, группы все";
+            var formatHint = ResponseDictionary.HintFormat(chatLanguage.Language);
             var split = request.Split(' ');
             if (!Poewatch.TradeCategories.Contains(split[0]))
-                return new Message(
-                    $"Некорректная категория. Список доступных категорий:\n{string.Join("\n", Poewatch.TradeCategories)}");
+                return new Message(ResponseDictionary.IncorrectCategory(chatLanguage.Language, Poewatch.TradeCategories));
             var num = 10;
             var group = "";
             switch (split.Length)
@@ -721,7 +657,7 @@ namespace Bot
 
             if (num < 1) return new Message(formatHint);
             var ja = poewatch.Get(split[0]);
-            if (ja == null || ja.Count == 0) return new Message("Не удалось получить данные о ценах");
+            if (ja == null || ja.Count == 0) return new Message(ResponseDictionary.UnableToObtainPrice(chatLanguage.Language));
             var results = ja.Children<JObject>().Where(o =>
                 (!string.IsNullOrEmpty(group) ? o["group"].Value<string>() == group : true)
                 && (split[0] == "gem"
@@ -730,11 +666,8 @@ namespace Bot
                     : true)
                 && o["linkCount"]?.Value<string>() == null);
             if (!results.Any())
-                return new Message(
-                    $"Неверно задана группа. Список доступных групп для данной категории:\n{string.Join("\n", ja.Children<JObject>().Select(o => o["group"].ToString()).Distinct())}");
-            return new Message(
-                $"Топ {num} предметов по цене в категории {split[0]}{(!string.IsNullOrEmpty(group) ? " группы " + group + " " : "")}:"
-                + $"\n{string.Join("\n", results.ToList().GetRange(0, num > results.Count() ? results.Count() : num).Select(o => $"{Regex.Match(o["median"].Value<string>(), @"\d+[.]?\d{0,2}")}c - {o["name"].Value<string>()}"))}");
+                return new Message(ResponseDictionary.IncorrectGroup(chatLanguage.Language, ja));
+            return new Message(ResponseDictionary.TopPricesResponce(chatLanguage.Language, num, split[0], group, results));
         }
 
         private Message GetCharInfo(string charName)
@@ -746,8 +679,8 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                return new Message("В данный момент сервер с базой данных недоступен");
+                Logger.Log.Error($"{e.Message} at {GetType()}");
+                return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
 
             string account;
@@ -757,7 +690,7 @@ namespace Bot
             }
             catch
             {
-                return new Message("Указанный герой не найден");
+                return new Message(ResponseDictionary.CharacterNotFound(chatLanguage.Language));
             }
 
             ja = Poewatch.Characters(account);
@@ -776,16 +709,13 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                return new Message("В данный момент сервер с базой данных недоступен");
+                Logger.Log.Error($"{e.Message} at {GetType()}");
+                return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
 
             if (ja.Count == 0)
-                return new Message("Указанный профиль не найден");
-            var chars = "";
-            foreach (var jt in ja)
-                chars += $"\n{jt["character"].Value<string>()} (лига: {jt["league"].Value<string>()}";
-            return new Message($"Список доступных для отображения персонажей профиля {account}:\n{chars}");
+                return new Message(ResponseDictionary.ProfileNotFound(chatLanguage.Language));
+            return new Message(ResponseDictionary.CharListResponce(chatLanguage.Language, account, ja));
         }
 
         private Message SubToRss(string prs)
@@ -800,8 +730,8 @@ namespace Bot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                    return new Message("Ошибка подписки, попробуйте повторить позже");
+                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    return new Message(ResponseDictionary.SubscriptionFailed(chatLanguage.Language));
                 }
 
                 var thisSub = subs.FirstOrDefault(x => Regex.IsMatch(x, parameters[1] + " " + parameters[0]));
@@ -812,34 +742,45 @@ namespace Bot
                         sw.WriteLine("{0} {1}", parameters[1], parameters[0]);
                     }
 
-                    return new Message(
-                        $"Эта беседа подписана на новости с {(parameters[0] == "ru" ? "русского" : "английского")} сайта игры");
+                    return new Message(ResponseDictionary.RssSubscription(chatLanguage.Language, parameters[0]));
                 }
-                else
-                {
-                    subs.Remove(thisSub);
-                    try
-                    {
-                        using (var sw = new StreamWriter(parameters[2], false, Encoding.Default))
-                        {
-                            foreach (var line in subs)
-                                sw.WriteLine(line);
-                        }
 
-                        return new Message(
-                            $"Эта беседа отписана от новостей с {(parameters[0] == "ru" ? "русского" : "английского")} сайта игры");
-                    }
-                    catch (Exception e)
+                subs.Remove(thisSub);
+                try
+                {
+                    using (var sw = new StreamWriter(parameters[2], false, Encoding.Default))
                     {
-                        Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
-                        return new Message("Ошибка подписки, попробуйте повторить позже");
+                        foreach (var line in subs)
+                            sw.WriteLine(line);
                     }
+
+                    return new Message(ResponseDictionary.RssUnsubscription(chatLanguage.Language, parameters[0]));
+                }
+                catch (Exception e)
+                {
+                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    return new Message(ResponseDictionary.SubscriptionFailed(chatLanguage.Language));
                 }
             }
-            else
+
+            return new Message(ResponseDictionary.IncorrectLanguage(chatLanguage.Language));
+        }
+
+        private Message ChangeResponseLanguage(string language)
+        {
+            ResponceLanguage languageEnum;
+            try
             {
-                return new Message("Указан неверный язык подписки");
+                languageEnum = ResponseDictionary.CodeToEnum(language);
             }
+            catch (Exception e)
+            {
+                Logger.Log.Error($"{e.Message} at {GetType()}");
+                return new Message(ResponseDictionary.IncorrectLanguage(chatLanguage.Language));
+            }
+
+            chatLanguage.Language = languageEnum;
+            return new Message(ResponseDictionary.LanguageChanged(languageEnum));
         }
 
         #endregion
@@ -856,7 +797,7 @@ namespace Bot
                     .InnerText.Replace("&#x27;", "'");
                 var node = hd.DocumentNode.SelectSingleNode("//a[contains(@class, 'b5szba-0')]");
                 node ??= hd.DocumentNode.SelectSingleNode("//img[contains(@class, '_2_tDEnGMLxpM6uOa2kaDB3')]")
-                        .ParentNode;
+                    .ParentNode;
                 using var wc = new WebClient();
                 var data = wc.DownloadData(node.Attributes["href"].Value);
                 photo.UploadPhoto(data);
@@ -864,7 +805,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
+                Logger.Log.Error($"{e.Message} at {GetType()}");
                 return null;
             }
         }
@@ -894,7 +835,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at {GetType()}");
+                Logger.Log.Error($"{e.Message} at {GetType()}");
                 return null;
             }
         }

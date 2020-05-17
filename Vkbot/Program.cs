@@ -1,17 +1,16 @@
-﻿using Bot;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.ServiceModel.Syndication;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Xml;
+using BotHandlers;
 using VkNet;
 using VkNet.Enums.SafetyEnums;
 using VkNet.Model;
@@ -20,17 +19,18 @@ using VkNet.Model.GroupUpdate;
 using VkNet.Model.RequestParams;
 using Timer = System.Timers.Timer;
 
-namespace Vkbot
+namespace VkBot
 {
     internal class Program
     {
         private const string CachePath = @"bot/vkcache.txt";
         private const string SubPath = @"bot/vksub.txt";
-        private const string LogPath = @"bot/vklog.txt";
+        private const string LangPath = @"bot/vklang.txt";
         private static readonly VkApi Vkapi = new VkApi();
         private static readonly Poewatch Poewatch = new Poewatch();
         private static SyndicationItem _lastEn, _lastRu;
         private static Timer _rssUpdate;
+        private static readonly Dictionary<long, ResponceLanguage> LangsDictionary = new Dictionary<long, ResponceLanguage>();
 
         private static void Main()
         {
@@ -38,6 +38,11 @@ namespace Vkbot
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             if (!File.Exists(SubPath)) File.Create(SubPath).Close();
             if (!File.Exists(CachePath)) File.Create(CachePath).Close();
+            if (!File.Exists(LangPath)) File.Create(LangPath).Close();
+
+            Logger.InitLogger();
+
+            ChatLanguage.LoadDictionary(LangPath, LangsDictionary);
 
             _rssUpdate = new Timer(5 * 60 * 1000);
             _rssUpdate.Elapsed += UpdateRss;
@@ -48,6 +53,7 @@ namespace Vkbot
             string ts = null;
 
             Console.WriteLine("Working");
+            Logger.Log.Info("Working");
 
             while (true)
             {
@@ -60,8 +66,7 @@ namespace Vkbot
                 try
                 {
                     var poll = Vkapi.Groups.GetBotsLongPollHistory(
-                        new BotsLongPollHistoryParams()
-                            {Server = serverResponse.Server, Ts = ts, Key = serverResponse.Key, Wait = 1});
+                        new BotsLongPollHistoryParams {Server = serverResponse.Server, Ts = ts, Key = serverResponse.Key, Wait = 1});
                     ts = poll.Ts;
                     if (poll.Updates == null) continue;
                     foreach (var ms in poll.Updates.Where(x => x.Type == GroupUpdateType.MessageNew))
@@ -81,7 +86,8 @@ namespace Vkbot
         private static void ProcessReqest(GroupUpdate ms)
         {
             var poebot = new Poebot(Poewatch,
-                new VkPhoto(CachePath, ms.Message.PeerId ?? throw new Exception("Id is null"), Vkapi.Photo));
+                                    new VkPhoto(CachePath, ms.Message.PeerId ?? throw new Exception("Id is null"), Vkapi.Photo),
+                                    new ChatLanguage(LangPath, ms.Message.PeerId ?? throw new Exception("Id is null"), LangsDictionary));
             var sw = new Stopwatch();
             sw.Start();
             string request;
@@ -118,7 +124,7 @@ namespace Vkbot
             });
 
             if (!request.Contains("/help"))
-                Log(request, message.Text ?? "", sw.ElapsedMilliseconds.ToString());
+                Logger.Log.Info($"Запрос: {request}\n\nОтвет:\n{message.Text ?? ""}\nВремя ответа: {sw.ElapsedMilliseconds}");
         }
 
         private static void SendMessage(MessagesSendParams messagesParams)
@@ -145,7 +151,7 @@ namespace Vkbot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Logger.Log.Error($"{e.Message} at {GetType()}");
                     Thread.Sleep(10000);
                 }
             }
@@ -155,61 +161,57 @@ namespace Vkbot
 
         private static void UpdateRss(object sender, ElapsedEventArgs e)
         {
-            try
+            Task.Factory.StartNew(() =>
             {
-                var subs = File.ReadAllLines(SubPath).ToList();
-                using (var r = XmlReader.Create("https://www.pathofexile.com/news/rss"))
+                try
                 {
-                    var feed = SyndicationFeed.Load(r);
-                    var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
-                    if (_lastEn == null) _lastEn = last;
-                    if (last.Links[0].Uri != _lastEn.Links[0].Uri && last.PublishDate > _lastEn.PublishDate)
+                    var subs = File.ReadAllLines(SubPath).ToList();
+                    using (var r = XmlReader.Create("https://www.pathofexile.com/news/rss"))
                     {
-                        _lastEn = last;
-                        var enSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sen"));
-                        foreach (var sub in enSubs)
-                            SendMessage(new MessagesSendParams
-                            {
-                                Message = _lastEn.Title.Text + '\n' + _lastEn.Links[0].Uri,
-                                PeerId = long.Parse(sub.Split(' ')[0])
-                            });
+                        var feed = SyndicationFeed.Load(r);
+                        var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
+                        if (_lastEn == null) _lastEn = last;
+                        if (last.Links[0].Uri != _lastEn.Links[0].Uri && last.PublishDate > _lastEn.PublishDate)
+                        {
+                            _lastEn = last;
+                            var enSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sen"));
+                            foreach (var sub in enSubs)
+                                SendMessage(new MessagesSendParams
+                                {
+                                    Message = _lastEn.Title.Text + '\n' + _lastEn.Links[0].Uri,
+                                    PeerId = long.Parse(sub.Split(' ')[0])
+                                });
+                        }
                     }
-                }
 
-                using (var r = XmlReader.Create("https://ru.pathofexile.com/news/rss"))
-                {
-                    var feed = SyndicationFeed.Load(r);
-                    var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
-                    if (_lastRu == null) _lastRu = last;
-                    if (last.Links[0].Uri != _lastRu.Links[0].Uri && last.PublishDate > _lastRu.PublishDate)
+                    using (var r = XmlReader.Create("https://ru.pathofexile.com/news/rss"))
                     {
-                        _lastRu = last;
-                        var ruSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sru"));
-                        foreach (var sub in ruSubs)
-                            SendMessage(new MessagesSendParams
-                            {
-                                Message = _lastRu.Title.Text + '\n' + _lastRu.Links[0].Uri,
-                                PeerId = long.Parse(sub.Split(' ')[0])
-                            });
+                        var feed = SyndicationFeed.Load(r);
+                        var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
+                        if (_lastRu == null) _lastRu = last;
+                        if (last.Links[0].Uri != _lastRu.Links[0].Uri && last.PublishDate > _lastRu.PublishDate)
+                        {
+                            _lastRu = last;
+                            var ruSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sru"));
+                            foreach (var sub in ruSubs)
+                                SendMessage(new MessagesSendParams
+                                {
+                                    Message = _lastRu.Title.Text + '\n' + _lastRu.Links[0].Uri,
+                                    PeerId = long.Parse(sub.Split(' ')[0])
+                                });
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"{DateTime.Now}: {ex.Message} at {GetType()}");
-            }
+                catch (Exception ex)
+                {
+                    Logger.Log.Error($"{ex.Message} at {GetType()}");
+                }
+            });
         }
 
         public new static Type GetType()
         {
             return typeof(Program);
-        }
-
-        private static void Log(string request, string responce, string time)
-        {
-            using var streamWriter = new StreamWriter(LogPath, true, Encoding.Default);
-            streamWriter.WriteLine(
-                $"{DateTime.Now}\nЗапрос:\n{request}\n\nОтвет:\n{responce}\nВремя ответа: {time}\n------------");
         }
     }
 }

@@ -2,7 +2,7 @@
 using System.IO;
 using System.Net;
 
-namespace Bot
+namespace BotHandlers
 {
     static class Common
     {
@@ -19,7 +19,7 @@ namespace Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now}: {e.Message} at Bot.Common.GetContent");
+                Logger.Log.Error($"{e.Message} at BotHandlers.Common.GetContent");
             }
 
             return output;
