@@ -88,7 +88,7 @@ namespace BotHandlers
             return command switch
             {
                 "start" => new Message(ResponseDictionary.HelloMessage(chatLanguage.Language)),
-                "w" => new Message(text: ItemSearch(param).url),
+                "w" => new Message(text: ItemSearch(param).Url),
                 "p" => TradeSearch(param),
                 "c" => GetCharInfo(param),
                 "cl" => GetCharList(param),
@@ -436,7 +436,7 @@ namespace BotHandlers
             return new Message(fstRetStr.Substring(0, fstRetStr.Length - 2) + sndRetStr);
         }
 
-        private (string name, string url) ItemSearch(string search)
+        private (string Name, string Url) ItemSearch(string search)
         {
             search = search.ToLower();
             string name, url;
@@ -466,7 +466,8 @@ namespace BotHandlers
                 if (item != null)
                 {
                     name = item["name"].Value<string>();
-                    url = $"https://pathofexile.gamepedia.com/{name.Replace(' ', '_')}";
+                    url = "https://pathofexile.gamepedia.com/" +
+                          $"{name.Replace(' ', '_')}";
                 }
                 else return ("", ResponseDictionary.NoResults(chatLanguage.Language, search));
             }
@@ -477,97 +478,95 @@ namespace BotHandlers
         private Message WikiScreenshot(string search)
         {
             var wiki = ItemSearch(search);
-            var url = wiki.url;
-            var name = wiki.name;
-            if (string.IsNullOrEmpty(name)) return new Message(text: url);
+            var url = wiki.Url;
+            var name = wiki.Name;
+            if (string.IsNullOrEmpty(name)) return new Message(url);
 
-            if (!photo.LoadPhotoFromFile(name))
+            if (photo.LoadPhotoFromFile(name)) return new Message(photo: photo);
+            lock (screenshotLocker)
             {
-                lock (screenshotLocker)
+                var options = new ChromeOptions();
+                options.AddArgument("enable-automation");
+                options.AddArgument("headless");
+                options.AddArgument("no-sandbox");
+                options.AddArgument("disable-infobars");
+                options.AddArgument("disable-dev-shm-usage");
+                options.AddArgument("disable-browser-side-navigation");
+                options.AddArgument("disable-gpu");
+                options.AddArgument("window-size=1000,2000");
+                options.PageLoadStrategy = PageLoadStrategy.None;
+
+                var os = Environment.OSVersion;
+                string driverDirectory;
+                switch (os.Platform)
                 {
-                    var options = new ChromeOptions();
-                    options.AddArgument("enable-automation");
-                    options.AddArgument("headless");
-                    options.AddArgument("no-sandbox");
-                    options.AddArgument("disable-infobars");
-                    options.AddArgument("disable-dev-shm-usage");
-                    options.AddArgument("disable-browser-side-navigation");
-                    options.AddArgument("disable-gpu");
-                    options.AddArgument("window-size=1000,2000");
-                    options.PageLoadStrategy = PageLoadStrategy.None;
-
-                    var os = Environment.OSVersion;
-                    string driverDirectory;
-                    switch (os.Platform)
+                    case PlatformID.Win32NT:
                     {
-                        case PlatformID.Win32NT:
-                        {
-                            driverDirectory = Environment.CurrentDirectory;
-                            break;
-                        }
-                        case PlatformID.Unix:
-                        {
-                            driverDirectory = "/usr/bin";
-                            break;
-                        }
-                        default:
-                        {
-                            return new Message(ResponseDictionary.SomethingWrong(chatLanguage.Language));
-                        }
+                        driverDirectory = Environment.CurrentDirectory;
+                        break;
                     }
+                    case PlatformID.Unix:
+                    {
+                        driverDirectory = "/usr/bin";
+                        break;
+                    }
+                    default:
+                    {
+                        return new Message(ResponseDictionary.SomethingWrong(chatLanguage.Language));
+                    }
+                }
 
+                try
+                {
+                    using var driver = new ChromeDriver(driverDirectory, options);
+                    driver.Navigate().GoToUrl(url);
+                    Thread.Sleep(4500);
+                    var bytes = driver.GetScreenshot().AsByteArray;
+                    var normalizeHeight = true;
+                    IWebElement element;
                     try
                     {
-                        using var driver = new ChromeDriver(driverDirectory, options);
-                        driver.Navigate().GoToUrl(url);
-                        Thread.Sleep(4000);
-                        var bytes = driver.GetScreenshot().AsByteArray;
-                        var normalizeHeight = true;
-                        IWebElement element;
-                        if (poewatch.FirstOrDefault(o => o["name"].Value<string>() == name) != null)
-                        {
-                            element = driver.FindElementByCssSelector(".infobox-page-container");
-                        }
-                        else
-                        {
-                            element = driver.FindElementByCssSelector(".infocard");
-                            normalizeHeight = false;
-                        }
-
-                        using var bytesStream = new MemoryStream(bytes);
-                        using var screenshot = new Bitmap(bytesStream);
-
-                        var y = element.Location.Y;
-                        if (normalizeHeight)
-                            for (; y > 0; y--)
-                            {
-                                var pixel = screenshot.GetPixel(element.Location.X,
-                                    y + element.Size.Height - 1);
-
-                                if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 2) !=
-                                    Color.FromArgb(255, 0, 0, 0)) continue;
-                                if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 1) !=
-                                    pixel) continue;
-                                if (screenshot.GetPixel(element.Location.X, y + element.Size.Height - 2) !=
-                                    pixel) continue;
-                                break;
-                            }
-
-                        if (y == 1) throw new Exception(ResponseDictionary.ImageFailed(chatLanguage.Language, name));
-
-                        var croppedImage = new Rectangle(element.Location.X, y,
-                            element.Size.Width, element.Size.Height);
-                        using var memoryStream = new MemoryStream();
-                        screenshot.Clone(croppedImage, screenshot.PixelFormat).Save(memoryStream,
-                            ImageFormat.Png);
-                        photo.SavePhoto(name.Replace(' ', '-').Replace("'", "").ToLower(),
-                            memoryStream.ToArray());
+                        element = driver.FindElementByCssSelector(".infobox-page-container");
                     }
-                    catch (Exception e)
+                    catch
                     {
-                        Logger.Log.Error($"{e.Message} at {GetType()}");
-                        return new Message();
+                        element = driver.FindElementByCssSelector(".infocard");
+                        normalizeHeight = false;
                     }
+
+                    using var bytesStream = new MemoryStream(bytes);
+                    using var screenshot = new Bitmap(bytesStream);
+
+                    var y = element.Location.Y;
+                    if (normalizeHeight)
+                        for (; y > 0; y--)
+                        {
+                            var pixel = screenshot.GetPixel(element.Location.X,
+                                y + element.Size.Height - 1);
+
+                            if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 2) !=
+                                Color.FromArgb(255, 0, 0, 0)) continue;
+                            if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 1) !=
+                                pixel) continue;
+                            if (screenshot.GetPixel(element.Location.X, y + element.Size.Height - 2) !=
+                                pixel) continue;
+                            break;
+                        }
+
+                    if (y == 1) throw new Exception(ResponseDictionary.ImageFailed(chatLanguage.Language, name));
+
+                    var croppedImage = new Rectangle(element.Location.X, y,
+                        element.Size.Width, element.Size.Height);
+                    using var memoryStream = new MemoryStream();
+                    screenshot.Clone(croppedImage, screenshot.PixelFormat).Save(memoryStream,
+                        ImageFormat.Png);
+                    photo.SavePhoto(name.Replace(' ', '-').Replace("'", "").ToLower(),
+                        memoryStream.ToArray());
+                }
+                catch (Exception e)
+                {
+                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    return new Message(ResponseDictionary.ImageFailed(chatLanguage.Language, name));
                 }
             }
 

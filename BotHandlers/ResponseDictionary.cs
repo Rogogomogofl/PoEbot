@@ -63,9 +63,15 @@ namespace BotHandlers
             return language switch
             {
                 ResponceLanguage.Russain =>
-                "Привет, я информационный бот-помощник по игре Path of Exile. Могу выдавать разную полезную информацию или присылать новости. Используй комманду /help, чтобы увидеть список всех команд",
+                "Привет, я информационный бот-помощник по игре Path of Exile." +
+                " Могу выдавать разную полезную информацию или присылать новости." +
+                " Используй комманду /help, чтобы увидеть список всех команд." +
+                " To change the language of answers to English, use the command /lang en",
                 ResponceLanguage.English =>
-                "Hi, I'm the Path of Exile information bot. I can give out all sorts of useful information or send you news. Use the /help command to see a list of all commands",
+                "Hi, I'm the Path of Exile information bot." +
+                " I can give out all sorts of useful information or send you news." +
+                " Use the /help command to see a list of all commands." +
+                " Чтобы изменить язык ответов на русский используйте команду /lang ru",
                 _ => throw new Exception("Unrealized language")
             };
         }
@@ -456,7 +462,7 @@ namespace BotHandlers
                 ResponceLanguage.Russain =>
                 "Язык бота для этой беседы изменён на Русский",
                 ResponceLanguage.English =>
-                "The bot language for this chat has been changed to English",
+                "Bot language for this chat has been changed to English",
                 _ => throw new Exception("Unrealized language")
             };
         }
