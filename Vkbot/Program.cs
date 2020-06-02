@@ -11,8 +11,10 @@ using System.Threading.Tasks;
 using System.Timers;
 using System.Xml;
 using BotHandlers;
+using Flurl.Http;
 using VkNet;
 using VkNet.Enums.SafetyEnums;
+using VkNet.Exception;
 using VkNet.Model;
 using VkNet.Model.Attachments;
 using VkNet.Model.GroupUpdate;
@@ -62,69 +64,85 @@ namespace VkBot
                     serverResponse = Auth();
                     ts = serverResponse.Ts;
                 }
-
-                try
+                else
                 {
-                    var poll = Vkapi.Groups.GetBotsLongPollHistory(
-                        new BotsLongPollHistoryParams {Server = serverResponse.Server, Ts = ts, Key = serverResponse.Key, Wait = 1});
-                    ts = poll.Ts;
-                    if (poll.Updates == null) continue;
-                    foreach (var ms in poll.Updates.Where(x => x.Type == GroupUpdateType.MessageNew))
+                    try
                     {
-                        Task.Factory.StartNew(() => ProcessReqest(ms));
+                        var poll = Vkapi.Groups.GetBotsLongPollHistory(
+                            new BotsLongPollHistoryParams
+                                {Server = serverResponse.Server, Ts = ts, Key = serverResponse.Key, Wait = 1});
+                        ts = poll.Ts;
+                        if (poll.Updates == null) continue;
+                        foreach (var ms in poll.Updates.Where(x => x.Type == GroupUpdateType.MessageNew))
+                        {
+                            ProcessReqestAsync(ms);
+                        }
                     }
-                }
-                catch
-                {
-                    Thread.Sleep(1000);
-                    serverResponse = Vkapi.Groups.GetLongPollServer(groupId: 178558335);
-                    ts = serverResponse.Ts;
+                    catch (FlurlHttpException)
+                    {
+                        Thread.Sleep(1000);
+                    }
+                    catch (LongPollKeyExpiredException)
+                    {
+                        serverResponse = Vkapi.Groups.GetLongPollServer(groupId: 178558335);
+                        ts = serverResponse.Ts;
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Log.Error($"{e.Message} at {GetType()}");
+                        throw;
+                    }
                 }
             }
         }
 
-        private static void ProcessReqest(GroupUpdate ms)
+        private static Task ProcessReqestAsync(GroupUpdate ms)
         {
-            var poebot = new Poebot(Poewatch,
-                                    new VkPhoto(CachePath, ms.Message.PeerId ?? throw new Exception("Id is null"), Vkapi.Photo),
-                                    new ChatLanguage(LangPath, ms.Message.PeerId ?? throw new Exception("Id is null"), LangsDictionary));
-            var sw = new Stopwatch();
-            sw.Start();
-            string request;
-            if (!string.IsNullOrEmpty(ms.Message.Text)) request = ms.Message.Text;
-            else if (ms.Message.Attachments.Any() && ms.Message.Attachments[0].Type.Name == "Link")
-                request = ms.Message.Attachments[0].Instance.ToString();
-            else return;
-
-            if (request.Contains("/sub ")) request += $"+{ms.Message.PeerId}+{SubPath}";
-
-            var message = poebot.ProcessRequest(request);
-            if (message == null) return;
-            var attachments = new List<MediaAttachment>();
-            var cotent = message.Photo?.GetContent();
-            if (cotent != null)
+            return Task.Run(() =>
             {
-                attachments.Add(new Photo
+                var poebot = new Poebot(Poewatch,
+                    new VkPhoto(CachePath, ms.Message.PeerId ?? throw new Exception("Id is null"), Vkapi.Photo),
+                    new ChatLanguage(LangPath, ms.Message.PeerId ?? throw new Exception("Id is null"),
+                        LangsDictionary));
+                var sw = new Stopwatch();
+                sw.Start();
+                string request;
+                if (!string.IsNullOrEmpty(ms.Message.Text)) request = ms.Message.Text;
+                else if (ms.Message.Attachments.Any() && ms.Message.Attachments[0].Type.Name == "Link")
+                    request = ms.Message.Attachments[0].Instance.ToString();
+                else return;
+
+                if (request.Contains("/sub ")) request += $"+{ms.Message.PeerId}+{SubPath}";
+
+                var message = poebot.ProcessRequest(request);
+                if (message == null) return;
+                var attachments = new List<MediaAttachment>();
+                var cotent = message.Photo?.GetContent();
+                if (cotent != null)
                 {
-                    Id = long.Parse(cotent[0]),
-                    OwnerId = long.Parse(cotent[1])
+                    attachments.Add(new Photo
+                    {
+                        Id = long.Parse(cotent[0]),
+                        OwnerId = long.Parse(cotent[1])
+                    });
+                }
+                else
+                {
+                    if (message.Text == null) return;
+                }
+
+                sw.Stop();
+                SendMessage(new MessagesSendParams
+                {
+                    Message = message.Text,
+                    Attachments = attachments,
+                    PeerId = ms.Message.PeerId
                 });
-            }
-            else
-            {
-                if (message.Text == null) return;
-            }
 
-            sw.Stop();
-            SendMessage(new MessagesSendParams
-            {
-                Message = message.Text,
-                Attachments = attachments,
-                PeerId = ms.Message.PeerId
+                if (!request.Contains("/help"))
+                    Logger.Log.Info(
+                        $"Запрос: {request}\n\nОтвет:\n{message.Text ?? ""}\nВремя ответа: {sw.ElapsedMilliseconds}");
             });
-
-            if (!request.Contains("/help"))
-                Logger.Log.Info($"Запрос: {request}\n\nОтвет:\n{message.Text ?? ""}\nВремя ответа: {sw.ElapsedMilliseconds}");
         }
 
         private static void SendMessage(MessagesSendParams messagesParams)
@@ -161,7 +179,7 @@ namespace VkBot
 
         private static void UpdateRss(object sender, ElapsedEventArgs e)
         {
-            Task.Factory.StartNew(() =>
+            Task.Run(() =>
             {
                 try
                 {

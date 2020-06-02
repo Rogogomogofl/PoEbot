@@ -192,9 +192,9 @@ namespace BotHandlers
             return language switch
             {
                 ResponceLanguage.Russain =>
-                $"По запросу {request} ничего не найдено",
+                $"По запросу \"{request}\" ничего не найдено",
                 ResponceLanguage.English =>
-                $"Nothing was found on {request} request.",
+                $"Nothing was found on \"{request}\" request.",
                 _ => throw new Exception("Unrealized language")
             };
         }

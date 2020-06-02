@@ -59,44 +59,40 @@ namespace TelegramBot
 
         private static async void TelegramBot_OnMessage(object sender, MessageEventArgs e)
         {
-#pragma warning disable CA2007 // Попробуйте вызвать ConfigureAwait для ожидаемой задачи
             await Task.Run(() =>
             {
-                if (e.Message.Text != null)
+                if (e.Message.Text == null) return;
+                if (e.Message.Date.AddMinutes(2) < DateTime.Now.ToUniversalTime()) return;
+                var sobaka = e.Message.Text.Split('@');
+                if (sobaka.Length > 1)
                 {
-                    if (e.Message.Date.AddMinutes(2) < DateTime.Now.ToUniversalTime()) return;
-                    var sobaka = e.Message.Text.Split('@');
-                    if (sobaka.Length > 1)
-                    {
-                        if (sobaka[1] == "poeinfobot") e.Message.Text = sobaka[0];
-                        else return;
-                    }
-
-                    var chats = File.ReadAllLines(LangPath); //to do
-                    var poebot = new Poebot(Poewatch, 
-                                            new TelegramPhoto(CachePath, e.Message.Chat.Id, _telegramBot),
-                                            new ChatLanguage(LangPath, e.Message.Chat.Id, LangsDictionary));
-                    var sw = new Stopwatch();
-                    sw.Start();
-                    var request = e.Message.Text;
-                    if (request.Contains("/sub ")) request += "+" + e.Message.Chat.Id + "+" + SubPath;
-
-                    var message = poebot.ProcessRequest(request);
-                    if (message == null) return;
-                    if (message.Text != null)
-                        _telegramBot.SendTextMessageAsync(chatId: e.Message.Chat.Id, text: message.Text);
-                    var content = message.Photo?.GetContent();
-                    if (content != null)
-                    {
-                        _telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: content[0]);
-                    }
-
-                    sw.Stop();
-                    if (!(request.Contains("/help") || request.Contains("/start")))
-                        Logger.Log.Info($"Запрос: {request}\n\nОтвет:\n{message.Text ?? ""}\nВремя ответа: {sw.ElapsedMilliseconds}");
+                    if (sobaka[1] == "poeinfobot") e.Message.Text = sobaka[0];
+                    else return;
                 }
+
+                var chats = File.ReadAllLines(LangPath); //to do
+                var poebot = new Poebot(Poewatch, 
+                    new TelegramPhoto(CachePath, e.Message.Chat.Id, _telegramBot),
+                    new ChatLanguage(LangPath, e.Message.Chat.Id, LangsDictionary));
+                var sw = new Stopwatch();
+                sw.Start();
+                var request = e.Message.Text;
+                if (request.Contains("/sub ")) request += "+" + e.Message.Chat.Id + "+" + SubPath;
+
+                var message = poebot.ProcessRequest(request);
+                if (message == null) return;
+                if (message.Text != null)
+                    _telegramBot.SendTextMessageAsync(chatId: e.Message.Chat.Id, text: message.Text);
+                var content = message.Photo?.GetContent();
+                if (content != null)
+                {
+                    _telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: content[0]);
+                }
+
+                sw.Stop();
+                if (!(request.Contains("/help") || request.Contains("/start")))
+                    Logger.Log.Info($"Запрос: {request}\n\nОтвет:\n{message.Text ?? ""}\nВремя ответа: {sw.ElapsedMilliseconds}");
             });
-#pragma warning restore CA2007 // Попробуйте вызвать ConfigureAwait для ожидаемой задачи
         }
 
         private static void UpdateRss(object sender, ElapsedEventArgs e)

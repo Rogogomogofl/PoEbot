@@ -59,7 +59,7 @@ namespace TestBot
 
         private static void UpdateRss(object sender, ElapsedEventArgs e)
         {
-            Task.Factory.StartNew(() =>
+            Task.Run(() =>
             {
                 try
                 {

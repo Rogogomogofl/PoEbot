@@ -98,8 +98,7 @@ namespace TelegramBot
                 try
                 {
                     using var stream = new MemoryStream(bytes);
-                    var returnedMessage = botClient.SendPhotoAsync(chatId: Id, photo: stream).Result;
-                    Content = new[] {returnedMessage.Photo.Last().FileId};
+                    botClient.SendPhotoAsync(chatId: Id, photo: stream).Wait();
                 }
                 catch (Exception e)
                 {
