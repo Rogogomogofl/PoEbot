@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using System.IO;
+using log4net;
 using log4net.Config;
 
 namespace BotHandlers
@@ -9,6 +10,7 @@ namespace BotHandlers
 
         public static void InitLogger()
         {
+            GlobalContext.Properties["LogFileName"] = $@"{Directory.GetCurrentDirectory()}/bot/";
             XmlConfigurator.Configure();
         }
     }
