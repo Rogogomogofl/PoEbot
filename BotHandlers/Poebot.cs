@@ -42,11 +42,6 @@ namespace BotHandlers
 
         public Message ProcessRequest(string request)
         {
-            if (!poewatch.IsDataLoaded())
-            {
-                return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
-            }
-
             if (commandReg.IsMatch(request))
             {
                 var command = commandReg.Match(request).Value.TrimStart('/').ToLower();
@@ -108,6 +103,10 @@ namespace BotHandlers
 
         private Message TradeSearch(string srch)
         {
+            if (!poewatch.IsDataLoaded)
+            {
+                return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
+            }
             srch = srch.ToLower();
 
             var links = Regex.Match(Regex.Match(srch, @"(5l|6l)").ToString(), @"\d").ToString();
@@ -296,6 +295,10 @@ namespace BotHandlers
 
         private Message HelpMe(string req)
         {
+            if (!poewatch.IsDataLoaded)
+            {
+                return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
+            }
             var pattern = req.Replace("the ", @"the\s");
             var regex = new Regex(pattern.Replace(" ", @"\D*\s\D*") + @"\D*");
             var items = poewatch.Where(o => regex.IsMatch(o["name"].Value<string>().ToLower())
@@ -310,6 +313,10 @@ namespace BotHandlers
 
         private Message PoeninjaBuilds(string srch)
         {
+            if (!poewatch.IsDataLoaded)
+            {
+                return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
+            }
             var items = new List<string>();
             while (srch.IndexOf('+') > 0)
             {
@@ -458,6 +465,10 @@ namespace BotHandlers
             }
             else
             {
+                if (!poewatch.IsDataLoaded)
+                {
+                    return ("", ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
+                }
                 var regex = new Regex($@"^{search.Replace(" ", @"\D*")}\D*");
                 var theRegex = new Regex($@"^the {search.Replace(" ", @"\D*")}\D*");
                 var item = poewatch.FirstOrDefault(o =>
@@ -625,6 +636,10 @@ namespace BotHandlers
 
         private Message TopPrices(string request)
         {
+            if (!poewatch.IsDataLoaded)
+            {
+                return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
+            }
             var formatHint = ResponseDictionary.HintFormat(chatLanguage.Language);
             var split = request.Split(' ');
             if (!Poewatch.TradeCategories.Contains(split[0]))

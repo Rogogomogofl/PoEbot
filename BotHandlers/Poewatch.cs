@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Timers;
 using Newtonsoft.Json.Linq;
 
@@ -21,14 +22,15 @@ namespace BotHandlers
             updateTimer.Elapsed += OnTimedEvent;
             updateTimer.AutoReset = true;
             updateTimer.Enabled = true;
-            LoadItemdata();
+            LoadItemdataAsync();
         }
 
-        public bool IsDataLoaded()
+        public bool IsDataLoaded
         {
-            lock (itemsDataLocker)
-                if (itemsData.Count > 0) return true;
-                else return false;
+            get
+            {
+                lock (itemsDataLocker) return itemsData.Count > 0;
+            }
         }
 
         public JObject FirstOrDefault(Func<JToken, bool> predicate)
@@ -84,38 +86,41 @@ namespace BotHandlers
 
         private void OnTimedEvent(object sender, ElapsedEventArgs e)
         {
-            LoadItemdata();
+            LoadItemdataAsync();
         }
 
-        private void LoadItemdata()
+        private async void LoadItemdataAsync()
         {
-            try
+            await Task.Run(() =>
             {
-                var ja = Leagues();
-                DefaultLeague = ja.LastOrDefault(o =>
-                    !o["hardcore"].Value<bool>() && !o["event"].Value<bool>() && o["challenge"].Value<bool>() &&
-                    !o["upcoming"].Value<bool>())["name"].Value<string>();
-            }
-            catch (Exception e)
-            {
-                Logger.Log.Error($"{e.Message} at {GetType()}");
-            }
-
-            try
-            {
-                lock (itemsDataLocker)
+                try
                 {
-                    itemsData.Clear();
-                    itemsData = ItemData();
+                    var ja = Leagues();
+                    DefaultLeague = ja.LastOrDefault(o =>
+                        !o["hardcore"].Value<bool>() && !o["event"].Value<bool>() && o["challenge"].Value<bool>() &&
+                        !o["upcoming"].Value<bool>())["name"].Value<string>();
+                }
+                catch (Exception e)
+                {
+                    Logger.Log.Error($"{e.Message} at {GetType()}");
                 }
 
-                updateTimer.Interval = 3600 * 1000;
-            }
-            catch (Exception e)
-            {
-                Logger.Log.Error($"{e.Message} at {GetType()}");
-                updateTimer.Interval = 5000;
-            }
+                try
+                {
+                    lock (itemsDataLocker)
+                    {
+                        itemsData.Clear();
+                        itemsData = ItemData();
+                    }
+                    Logger.Log.Info("Data loaded");
+                    updateTimer.Interval = 3600 * 1000;
+                }
+                catch (Exception e)
+                {
+                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    updateTimer.Interval = 60 * 1000;
+                }
+            });
         }
     }
 }
