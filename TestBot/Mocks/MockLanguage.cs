@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using BotHandlers;
 using BotHandlers.Abstracts;
+using BotHandlers.Methods;
 
 namespace TestBot.Mocks
 {

@@ -2,9 +2,9 @@
 using System.IO;
 using System.Net;
 
-namespace BotHandlers
+namespace BotHandlers.Static
 {
-    static class Common
+    public static class Common
     {
         public static string GetContent(string url)
         {

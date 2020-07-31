@@ -7,8 +7,9 @@ using System.ServiceModel.Syndication;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Xml;
-using BotHandlers;
 using BotHandlers.APIs;
+using BotHandlers.Methods;
+using BotHandlers.Static;
 using TestBot.Mocks;
 
 namespace TestBot

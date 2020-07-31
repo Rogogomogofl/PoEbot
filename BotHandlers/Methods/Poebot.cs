@@ -8,6 +8,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using BotHandlers.Abstracts;
+using BotHandlers.Models;
+using BotHandlers.Static;
 using HtmlAgilityPack;
 using Newtonsoft.Json.Linq;
 using OpenQA.Selenium;
@@ -18,15 +20,13 @@ using OxyPlot.Series;
 using OxyPlot.WindowsForms;
 using ImageFormat = System.Drawing.Imaging.ImageFormat;
 
-namespace BotHandlers
+namespace BotHandlers.Methods
 {
     public class Poebot
     {
         private readonly string[] labLayouts = { "normal", "cruel", "merciless", "uber" };
         private readonly string[] hints = { "delve", "incursion", "betrayal", /*"all"*/};
         private readonly Regex commandReg = new Regex(@"^[/]\S+");
-        private readonly object requestLocker = new object();
-        private readonly object screenshotLocker = new object();
         private readonly AbstractApi api;
         private readonly AbstractPhoto photo;
         private readonly AbstractChatLanguage chatLanguage;
@@ -83,7 +83,7 @@ namespace BotHandlers
             return command switch
             {
                 "start" => new Message(ResponseDictionary.HelloMessage(chatLanguage.Language)),
-                "w" => new Message(text: ItemSearch(param).Url),
+                "w" => new Message(ItemSearch(param).Url),
                 "p" => TradeSearch(param),
                 "c" => GetCharInfo(param),
                 "cl" => GetCharList(param),
@@ -387,95 +387,92 @@ namespace BotHandlers
             var name = wiki.Name;
             if (string.IsNullOrEmpty(name)) return new Message(url);
 
-            if (photo.LoadPhotoFromFile(name)) return new Message(photo: photo);
-            lock (screenshotLocker)
+            if (photo.LoadPhotoFromFile(name)) return new Message(photo);
+            var options = new ChromeOptions();
+            options.AddArgument("enable-automation");
+            options.AddArgument("headless");
+            options.AddArgument("no-sandbox");
+            options.AddArgument("disable-infobars");
+            options.AddArgument("disable-dev-shm-usage");
+            options.AddArgument("disable-browser-side-navigation");
+            options.AddArgument("disable-gpu");
+            options.AddArgument("window-size=1000,2000");
+            options.PageLoadStrategy = PageLoadStrategy.None;
+
+            var os = Environment.OSVersion;
+            string driverDirectory;
+            switch (os.Platform)
             {
-                var options = new ChromeOptions();
-                options.AddArgument("enable-automation");
-                options.AddArgument("headless");
-                options.AddArgument("no-sandbox");
-                options.AddArgument("disable-infobars");
-                options.AddArgument("disable-dev-shm-usage");
-                options.AddArgument("disable-browser-side-navigation");
-                options.AddArgument("disable-gpu");
-                options.AddArgument("window-size=1000,2000");
-                options.PageLoadStrategy = PageLoadStrategy.None;
-
-                var os = Environment.OSVersion;
-                string driverDirectory;
-                switch (os.Platform)
-                {
-                    case PlatformID.Win32NT:
-                        {
-                            driverDirectory = Environment.CurrentDirectory;
-                            break;
-                        }
-                    case PlatformID.Unix:
-                        {
-                            driverDirectory = "/usr/bin";
-                            break;
-                        }
-                    default:
-                        {
-                            return new Message(ResponseDictionary.SomethingWrong(chatLanguage.Language));
-                        }
-                }
-
-                try
-                {
-                    using var driver = new ChromeDriver(driverDirectory, options);
-                    driver.Navigate().GoToUrl(url);
-                    Thread.Sleep(4500);
-                    var bytes = driver.GetScreenshot().AsByteArray;
-                    var normalizeHeight = true;
-                    IWebElement element;
-                    try
+                case PlatformID.Win32NT:
                     {
-                        element = driver.FindElementByCssSelector(".infobox-page-container");
+                        driverDirectory = Environment.CurrentDirectory;
+                        break;
                     }
-                    catch
+                case PlatformID.Unix:
                     {
-                        element = driver.FindElementByCssSelector(".infocard");
-                        normalizeHeight = false;
+                        driverDirectory = "/usr/bin";
+                        break;
                     }
-
-                    using var bytesStream = new MemoryStream(bytes);
-                    using var screenshot = new Bitmap(bytesStream);
-
-                    var y = element.Location.Y;
-                    if (normalizeHeight)
-                        for (; y > 0; y--)
-                        {
-                            var pixel = screenshot.GetPixel(element.Location.X,
-                                y + element.Size.Height - 1);
-
-                            if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 2) !=
-                                Color.FromArgb(255, 0, 0, 0)) continue;
-                            if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 1) !=
-                                pixel) continue;
-                            if (screenshot.GetPixel(element.Location.X, y + element.Size.Height - 2) !=
-                                pixel) continue;
-                            break;
-                        }
-
-                    if (y == 1) throw new Exception(ResponseDictionary.ImageFailed(chatLanguage.Language, name));
-
-                    var croppedImage = new Rectangle(element.Location.X, y,
-                        element.Size.Width, element.Size.Height);
-                    using var memoryStream = new MemoryStream();
-                    screenshot.Clone(croppedImage, screenshot.PixelFormat).Save(memoryStream,
-                        ImageFormat.Png);
-                    photo.SavePhoto(name.Replace(' ', '-').Replace("'", "").ToLower(),
-                        memoryStream.ToArray());
-                }
-                catch (Exception ex)
-                {
-                    Logger.Log.Error($"{GetType()} {ex}");
-                    return new Message(ResponseDictionary.ImageFailed(chatLanguage.Language, name));
-                }
+                default:
+                    {
+                        return new Message(ResponseDictionary.SomethingWrong(chatLanguage.Language));
+                    }
             }
 
-            return new Message(photo: photo);
+            try
+            {
+                using var driver = new ChromeDriver(driverDirectory, options);
+                driver.Navigate().GoToUrl(url);
+                Thread.Sleep(4500);
+                var bytes = driver.GetScreenshot().AsByteArray;
+                var normalizeHeight = true;
+                IWebElement element;
+                try
+                {
+                    element = driver.FindElementByCssSelector(".infobox-page-container");
+                }
+                catch
+                {
+                    element = driver.FindElementByCssSelector(".infocard");
+                    normalizeHeight = false;
+                }
+
+                using var bytesStream = new MemoryStream(bytes);
+                using var screenshot = new Bitmap(bytesStream);
+
+                var y = element.Location.Y;
+                if (normalizeHeight)
+                    for (; y > 0; y--)
+                    {
+                        var pixel = screenshot.GetPixel(element.Location.X,
+                            y + element.Size.Height - 1);
+
+                        if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 2) !=
+                            Color.FromArgb(255, 0, 0, 0)) continue;
+                        if (screenshot.GetPixel(element.Location.X + 1, y + element.Size.Height - 1) !=
+                            pixel) continue;
+                        if (screenshot.GetPixel(element.Location.X, y + element.Size.Height - 2) !=
+                            pixel) continue;
+                        break;
+                    }
+
+                if (y == 1) throw new Exception(ResponseDictionary.ImageFailed(chatLanguage.Language, name));
+
+                var croppedImage = new Rectangle(element.Location.X, y,
+                    element.Size.Width, element.Size.Height);
+                using var memoryStream = new MemoryStream();
+                screenshot.Clone(croppedImage, screenshot.PixelFormat).Save(memoryStream,
+                    ImageFormat.Png);
+                photo.SavePhoto(name.Replace(' ', '-').Replace("'", "").ToLower(),
+                    memoryStream.ToArray());
+            }
+            catch (Exception ex)
+            {
+                Logger.Log.Error($"{GetType()} {ex}");
+                return new Message(ResponseDictionary.ImageFailed(chatLanguage.Language, name));
+            }
+
+            return new Message(photo);
         }
 
         private Message LabLayout(string search)
@@ -515,7 +512,7 @@ namespace BotHandlers
                 using var wc = new WebClient();
                 var data = wc.DownloadData(labImageUrl);
                 photo.UploadPhoto(data);
-                return new Message(photo: photo);
+                return new Message(photo);
             }
             catch (Exception ex)
             {
@@ -532,7 +529,7 @@ namespace BotHandlers
                 return new Message(ResponseDictionary.IncorrectHintKey(chatLanguage.Language, request, hints));
             }
 
-            return new Message(photo: photo);
+            return new Message(photo);
         }
 
         /*private Message TopPrices(string request)
@@ -687,7 +684,7 @@ namespace BotHandlers
                 using var wc = new WebClient();
                 var data = wc.DownloadData(node.Attributes["href"].Value);
                 photo.UploadPhoto(data);
-                return new Message(text: title, photo: photo);
+                return new Message(title, photo);
             }
             catch (Exception ex)
             {
@@ -717,7 +714,7 @@ namespace BotHandlers
                 using (var streamReader = new StreamReader(response.GetResponseStream()))
                     responseString = streamReader.ReadToEnd();
                 var jo = JObject.Parse(responseString);
-                return new Message(text: "https://pob.party/share/" + jo["url"].Value<string>());
+                return new Message("https://pob.party/share/" + jo["url"].Value<string>());
             }
             catch (Exception ex)
             {

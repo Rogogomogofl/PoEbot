@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using BotHandlers.Abstracts;
 using BotHandlers.Models;
+using BotHandlers.Static;
 using Newtonsoft.Json.Linq;
 
 namespace BotHandlers.APIs

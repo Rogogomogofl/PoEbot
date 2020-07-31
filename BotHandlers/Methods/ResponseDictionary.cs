@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using BotHandlers.Models;
 using Newtonsoft.Json.Linq;
 
-namespace BotHandlers
+namespace BotHandlers.Methods
 {
     public enum ResponseLanguage
     {

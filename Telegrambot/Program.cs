@@ -7,9 +7,13 @@ using System.Threading.Tasks;
 using BotHandlers;
 using BotHandlers.Abstracts;
 using BotHandlers.APIs;
+using BotHandlers.Methods;
+using BotHandlers.Models;
+using BotHandlers.Static;
 using MihaZupan;
 using Telegram.Bot;
 using Telegram.Bot.Args;
+using TelegramBot.Models;
 
 namespace TelegramBot
 {

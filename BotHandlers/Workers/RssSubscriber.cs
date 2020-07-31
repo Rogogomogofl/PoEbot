@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Xml;
+using BotHandlers.Static;
 
 namespace BotHandlers
 {

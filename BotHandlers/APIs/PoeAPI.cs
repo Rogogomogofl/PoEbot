@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using BotHandlers.Abstracts;
 using BotHandlers.Models;
+using BotHandlers.Static;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

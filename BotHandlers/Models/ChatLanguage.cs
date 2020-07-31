@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using BotHandlers.Abstracts;
+using BotHandlers.Methods;
+using BotHandlers.Static;
 
-namespace BotHandlers
+namespace BotHandlers.Models
 {
     public class ChatLanguage : AbstractChatLanguage
     {

@@ -2,11 +2,11 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using BotHandlers;
 using BotHandlers.Abstracts;
+using BotHandlers.Static;
 using Telegram.Bot;
 
-namespace TelegramBot
+namespace TelegramBot.Models
 {
     public class TelegramPhoto : AbstractPhoto
     {
@@ -83,7 +83,7 @@ namespace TelegramBot
                 try
                 {
                     using var stream = new MemoryStream(bytes);
-                    var returnedMessage = botClient.SendPhotoAsync(chatId: Id, photo: stream).Result;
+                    var returnedMessage = botClient.SendPhotoAsync(Id, stream).Result;
                     using var streamWriter = new StreamWriter(CachePath, true, Encoding.Default);
                     streamWriter.WriteLine("{0} {1}", name, returnedMessage.Photo.Last().FileId);
                 }
@@ -108,7 +108,7 @@ namespace TelegramBot
                 try
                 {
                     using var stream = new MemoryStream(bytes);
-                    botClient.SendPhotoAsync(chatId: Id, photo: stream).Wait();
+                    botClient.SendPhotoAsync(Id, stream).Wait();
                 }
                 catch (Exception ex)
                 {

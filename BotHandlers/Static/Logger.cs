@@ -2,7 +2,7 @@
 using log4net;
 using log4net.Config;
 
-namespace BotHandlers
+namespace BotHandlers.Static
 {
     public static class Logger
     {

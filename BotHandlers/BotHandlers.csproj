@@ -69,20 +69,21 @@
     <Compile Include="Abstracts\AbstractAPI.cs" />
     <Compile Include="Abstracts\AbstractChatLanguage.cs" />
     <Compile Include="APIs\PoeNinjaAPI.cs" />
-    <Compile Include="ChatLanguage.cs" />
+    <Compile Include="Models\ChatLanguage.cs" />
     <Compile Include="Abstracts\AbstractPhoto.cs" />
-    <Compile Include="Common.cs" />
-    <Compile Include="Logger.cs" />
-    <Compile Include="Message.cs" />
+    <Compile Include="Static\Common.cs" />
+    <Compile Include="Static\Logger.cs" />
+    <Compile Include="Models\Message.cs" />
     <Compile Include="APIs\PoeAPI.cs" />
     <Compile Include="Models\PriceData.cs" />
-    <Compile Include="Poebot.cs" />
+    <Compile Include="Methods\Poebot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ResponseDictionary.cs" />
-    <Compile Include="RssSubscriber.cs" />
+    <Compile Include="Methods\ResponseDictionary.cs" />
+    <Compile Include="Workers\RssSubscriber.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
