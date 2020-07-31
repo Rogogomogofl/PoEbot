@@ -4,13 +4,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.ServiceModel.Syndication;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
 using BotHandlers;
+using BotHandlers.Abstracts;
+using BotHandlers.APIs;
 using Flurl.Http;
 using VkNet;
 using VkNet.Enums.SafetyEnums;
@@ -19,7 +17,6 @@ using VkNet.Model;
 using VkNet.Model.Attachments;
 using VkNet.Model.GroupUpdate;
 using VkNet.Model.RequestParams;
-using Timer = System.Timers.Timer;
 
 namespace VkBot
 {
@@ -28,11 +25,13 @@ namespace VkBot
         private const string CachePath = @"bot/vkcache.txt";
         private const string SubPath = @"bot/vksub.txt";
         private const string LangPath = @"bot/vklang.txt";
+
         private static readonly VkApi Vkapi = new VkApi();
-        private static readonly Poewatch Poewatch = new Poewatch();
-        private static SyndicationItem _lastEn, _lastRu;
-        private static Timer _rssUpdate;
-        private static readonly Dictionary<long, ResponceLanguage> LangsDictionary = new Dictionary<long, ResponceLanguage>();
+        private static readonly AbstractApi Api = new PoeApi();
+        private static readonly Random Rand = new Random();
+
+        private static RssSubscriber _rssSubscriber;
+        private static Dictionary<long, ResponseLanguage> _langsDictionary;
 
         private static void Main()
         {
@@ -44,12 +43,9 @@ namespace VkBot
 
             Logger.InitLogger();
 
-            ChatLanguage.LoadDictionary(LangPath, LangsDictionary);
-
-            _rssUpdate = new Timer(5 * 60 * 1000);
-            _rssUpdate.Elapsed += UpdateRss;
-            _rssUpdate.AutoReset = true;
-            _rssUpdate.Enabled = true;
+            _langsDictionary = ChatLanguage.LoadDictionary(LangPath);
+            _rssSubscriber = new RssSubscriber(SubPath);
+            _rssSubscriber.RssUpdated += RssUpdated;
 
             LongPollServerResponse serverResponse = null;
             string ts = null;
@@ -59,7 +55,7 @@ namespace VkBot
 
             while (true)
             {
-                if (!Vkapi.IsAuthorized)
+                if (!Vkapi.IsAuthorized || serverResponse == null)
                 {
                     serverResponse = Auth();
                     ts = serverResponse.Ts;
@@ -75,7 +71,7 @@ namespace VkBot
                         if (poll.Updates == null) continue;
                         foreach (var ms in poll.Updates.Where(x => x.Type == GroupUpdateType.MessageNew))
                         {
-                            ProcessReqestAsync(ms);
+                            ProcessReqestAsync(ms).ConfigureAwait(false);
                         }
                     }
                     catch (FlurlHttpException)
@@ -84,38 +80,52 @@ namespace VkBot
                     }
                     catch (LongPollKeyExpiredException)
                     {
-                        serverResponse = Vkapi.Groups.GetLongPollServer(groupId: 178558335);
+                        serverResponse = Vkapi.Groups.GetLongPollServer(178558335);
                         ts = serverResponse.Ts;
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
-                        Logger.Log.Error($"{e.Message} at {GetType()}");
-                        throw;
+                        Logger.Log.Error($"{GetType()} {ex}");
                     }
                 }
             }
         }
 
-        private static Task ProcessReqestAsync(GroupUpdate ms)
+        private static Task ProcessReqestAsync(GroupUpdate gUpdate)
         {
             return Task.Run(() =>
             {
-                var poebot = new Poebot(Poewatch,
-                    new VkPhoto(CachePath, ms.Message.PeerId ?? throw new Exception("Id is null"), Vkapi.Photo),
-                    new ChatLanguage(LangPath, ms.Message.PeerId ?? throw new Exception("Id is null"),
-                        LangsDictionary));
+                var poebot = new Poebot(Api,
+                    new VkPhoto(CachePath, gUpdate.Message.PeerId ?? throw new Exception("Id is null"), Vkapi.Photo),
+                    new ChatLanguage(LangPath, gUpdate.Message.PeerId ?? throw new Exception("Id is null"),
+                        _langsDictionary));
                 var sw = new Stopwatch();
                 sw.Start();
                 string request;
-                if (!string.IsNullOrEmpty(ms.Message.Text)) request = ms.Message.Text;
-                else if (ms.Message.Attachments.Any() && ms.Message.Attachments[0].Type.Name == "Link")
-                    request = ms.Message.Attachments[0].Instance.ToString();
-                else return;
+                if (!string.IsNullOrEmpty(gUpdate.Message.Text))
+                {
+                    request = gUpdate.Message.Text;
+                }
+                else if (gUpdate.Message.Attachments.Any() && gUpdate.Message.Attachments[0].Type.Name == "Link")
+                {
+                    request = gUpdate.Message.Attachments[0].Instance.ToString();
+                }
+                else
+                {
+                    return;
+                }
 
-                if (request.Contains("/sub ")) request += $"+{ms.Message.PeerId}+{SubPath}";
+                if (request.Contains("/sub "))
+                {
+                    request += $"+{gUpdate.Message.PeerId}+{SubPath}";
+                }
 
                 var message = poebot.ProcessRequest(request);
-                if (message == null) return;
+                if (message == null)
+                {
+                    return;
+                }
+
                 var attachments = new List<MediaAttachment>();
                 var cotent = message.Photo?.GetContent();
                 if (cotent != null)
@@ -136,94 +146,60 @@ namespace VkBot
                 {
                     Message = message.Text,
                     Attachments = attachments,
-                    PeerId = ms.Message.PeerId
+                    PeerId = gUpdate.Message.PeerId
                 });
 
                 if (!request.Contains("/help"))
+                {
                     Logger.Log.Info(
                         $"Запрос: {request}\n\nОтвет:\n{message.Text ?? ""}\nВремя ответа: {sw.ElapsedMilliseconds}");
+                }
             });
         }
 
         private static void SendMessage(MessagesSendParams messagesParams)
         {
-            var random = new Random();
-            if (messagesParams.Message != null && messagesParams.Message.Count() > 4096)
+            if (!Vkapi.IsAuthorized) return;
+
+            if (messagesParams.Message != null && messagesParams.Message.Length > 4096)
+            {
                 messagesParams.Message = messagesParams.Message.Substring(0, 4096);
-            messagesParams.RandomId = random.Next();
+            }
+
+            messagesParams.RandomId = Rand.Next();
             Vkapi.Messages.Send(messagesParams);
         }
 
         private static LongPollServerResponse Auth()
         {
-            while (!Vkapi.IsAuthorized)
-            {
-                Console.WriteLine("Authorizing...");
-                try
-                {
-                    Vkapi.Authorize(new ApiAuthParams
-                    {
-                        AccessToken = File.ReadAllText("bot/vktoken.txt")
-                    });
-                    return Vkapi.Groups.GetLongPollServer(groupId: 178558335);
-                }
-                catch (Exception e)
-                {
-                    Logger.Log.Error($"{e.Message} at {GetType()}");
-                    Thread.Sleep(10000);
-                }
-            }
-
-            throw new Exception("UB");
-        }
-
-        private static void UpdateRss(object sender, ElapsedEventArgs e)
-        {
-            Task.Run(() =>
+            while (true)
             {
                 try
                 {
-                    var subs = File.ReadAllLines(SubPath).ToList();
-                    using (var r = XmlReader.Create("https://www.pathofexile.com/news/rss"))
+                    if (!Vkapi.IsAuthorized)
                     {
-                        var feed = SyndicationFeed.Load(r);
-                        var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
-                        if (_lastEn == null) _lastEn = last;
-                        if (last.Links[0].Uri != _lastEn.Links[0].Uri && last.PublishDate > _lastEn.PublishDate)
+                        Console.WriteLine("Authorizing...");
+                        Vkapi.Authorize(new ApiAuthParams
                         {
-                            _lastEn = last;
-                            var enSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sen"));
-                            foreach (var sub in enSubs)
-                                SendMessage(new MessagesSendParams
-                                {
-                                    Message = _lastEn.Title.Text + '\n' + _lastEn.Links[0].Uri,
-                                    PeerId = long.Parse(sub.Split(' ')[0])
-                                });
-                        }
+                            AccessToken = File.ReadAllText("bot/vktoken.txt")
+                        });
                     }
-
-                    using (var r = XmlReader.Create("https://ru.pathofexile.com/news/rss"))
-                    {
-                        var feed = SyndicationFeed.Load(r);
-                        var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
-                        if (_lastRu == null) _lastRu = last;
-                        if (last.Links[0].Uri != _lastRu.Links[0].Uri && last.PublishDate > _lastRu.PublishDate)
-                        {
-                            _lastRu = last;
-                            var ruSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sru"));
-                            foreach (var sub in ruSubs)
-                                SendMessage(new MessagesSendParams
-                                {
-                                    Message = _lastRu.Title.Text + '\n' + _lastRu.Links[0].Uri,
-                                    PeerId = long.Parse(sub.Split(' ')[0])
-                                });
-                        }
-                    }
+                    return Vkapi.Groups.GetLongPollServer(178558335);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log.Error($"{ex.Message} at {GetType()}");
+                    Logger.Log.Error($"{GetType()} {ex}");
+                    Thread.Sleep(10000);
                 }
+            }
+        }
+
+        private static void RssUpdated(object sender, RssUpdatedEventArgs e)
+        {
+            SendMessage(new MessagesSendParams
+            {
+                PeerId = e.Id,
+                Message = e.Message
             });
         }
 

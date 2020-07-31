@@ -22,18 +22,18 @@ namespace BotHandlers
 {
     public class Poebot
     {
-        private readonly string[] labLayouts = {"normal", "cruel", "merciless", "uber"};
-        private readonly string[] hints = {"delve", "incursion", "betrayal", /*"all"*/};
+        private readonly string[] labLayouts = { "normal", "cruel", "merciless", "uber" };
+        private readonly string[] hints = { "delve", "incursion", "betrayal", /*"all"*/};
         private readonly Regex commandReg = new Regex(@"^[/]\S+");
         private readonly object requestLocker = new object();
         private readonly object screenshotLocker = new object();
-        private readonly Poewatch poewatch;
+        private readonly AbstractApi api;
         private readonly AbstractPhoto photo;
         private readonly AbstractChatLanguage chatLanguage;
 
-        public Poebot(Poewatch poewatch, AbstractPhoto photo, AbstractChatLanguage chatLanguage)
+        public Poebot(AbstractApi api, AbstractPhoto photo, AbstractChatLanguage chatLanguage)
         {
-            this.poewatch = poewatch;
+            this.api = api;
             this.photo = photo;
             this.chatLanguage = chatLanguage;
         }
@@ -92,7 +92,7 @@ namespace BotHandlers
                 "i" => WikiScreenshot(param),
                 "l" => LabLayout(param),
                 "h" => LeagueHint(param),
-                "top" => TopPrices(param),
+                //"top" => TopPrices(param),
                 "hm" => HelpMe(param),
                 "help" => new Message(ResponseDictionary.HelpMessage(chatLanguage.Language)),
                 "sub" => SubToRss(param),
@@ -103,156 +103,59 @@ namespace BotHandlers
 
         private Message TradeSearch(string srch)
         {
-            if (!poewatch.IsDataLoaded)
+            if (!api.IsDataLoaded)
             {
                 return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
+
             srch = srch.ToLower();
 
-            var links = Regex.Match(Regex.Match(srch, @"(5l|6l)").ToString(), @"\d").ToString();
-            srch = srch.Replace("6l", "").Replace("5l", "");
-
-            var league = poewatch.DefaultLeague;
-            if (srch.IndexOf('|') > 0)
+            var match = Regex.Match(srch, @"( [56]l)").ToString();
+            var links = Regex.Match(match, @"\d").ToString();
+            if (!string.IsNullOrWhiteSpace(match))
             {
-                JArray leaguesja;
-                try
-                {
-                    leaguesja = Poewatch.Leagues();
-                }
-                catch (Exception e)
-                {
-                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                srch = srch.Replace(match, "");
+            }
+
+            string league;
+            if (srch.Contains("|"))
+            {
+                var leagues = api.GetLeagues();
+                if (leagues == null)
                     return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
-                }
 
-                var leagues = leaguesja.Aggregate("", (current, el) => current + el["name"].Value<string>() + "\n");
-                try
-                {
-                    var ln = srch.Substring(srch.IndexOf('|') + 1).Trim(' ');
-                    if (string.IsNullOrEmpty(ln))
-                        throw new Exception();
-                    srch = srch.Substring(0, srch.IndexOf('|') - 1);
-                    var lreg = new Regex($@"^{ln.Replace(" ", @"\S*\s?")}\S*");
-                    league = leaguesja.FirstOrDefault(o => lreg.IsMatch(o["name"].Value<string>().ToLower()))["name"]
-                        .Value<string>();
-                }
-                catch
-                {
-                    return new Message(ResponseDictionary.IncorrectLeagueKey(chatLanguage.Language, leagues));
-                }
+                var ln = srch.Split('|').Last().Trim(' ');
+                if (string.IsNullOrEmpty(ln))
+                    return new Message(
+                        ResponseDictionary.IncorrectLeagueKey(chatLanguage.Language, string.Join("\n", leagues)));
+                srch = srch.Substring(0, srch.IndexOf('|') - 1);
+                var lreg = new Regex($@"^{ln.Replace(" ", @"\S*\s?")}\S*");
+                league = leagues.FirstOrDefault(l => lreg.IsMatch(l.ToLower()));
             }
-
-            srch = srch.Trim(' ');
-
-            var pattern = srch.Replace("the ", @"the\s");
-            var regex = new Regex($@"^{pattern.Replace(" ", @"\D*\s\D*")}\D*");
-            var theRegex = new Regex($@"^the {pattern.Replace(" ", @"\D*\s\D*")}\D*");
-            var jo = new JObject();
-            JArray ja;
-
-            var tmp = poewatch.Where(o =>
-                (regex.IsMatch(o["name"].Value<string>().ToLower()) ||
-                 theRegex.IsMatch(o["name"].Value<string>().ToLower()))
-                && o["linkCount"]?.Value<string>() == (string.IsNullOrEmpty(links) ? null : links)
-                && (o["variation"] == null || o["variation"].Value<string>() == "1 socket")
-                && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
-            if (!tmp?.Any() ?? true)
-                return new Message(ResponseDictionary.UnableToObtainPrice(chatLanguage.Language, srch , links));
-            
-            foreach (var token in tmp)
+            else
             {
-                try
-                {
-                    jo = Poewatch.Item(token["id"].Value<string>());
-                }
-                catch (Exception e)
-                {
-                    Logger.Log.Error($"{e.Message} at {GetType()}");
-                    return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
-                }
-
-                ja = jo["leagues"].Value<JArray>();
-                if (ja.Children<JObject>().FirstOrDefault(o => o["name"].Value<string>() == poewatch.DefaultLeague) !=
-                    null) break;
+                league = api.DefaultLeague;
             }
 
-            var name = (string) jo["name"];
-
-            if (name == "Skin of the Lords" || name == "Skin of the Loyal" || name == "Tabula Rasa" ||
-                name == "Shadowstitch") //Все 6л по умолчанию сюда
-                jo = poewatch.FirstOrDefault(o =>
-                    (regex.IsMatch(o["name"].Value<string>().ToLower()) ||
-                     theRegex.IsMatch(o["name"].Value<string>().ToLower())) && o["linkCount"].Value<int>() == 6);
-
-            //string tradelink = "http://poe.trade/search?league=" + league.Replace(' ', '+') + "&online=x&name=" + name.Replace(' ', '+') + (!string.IsNullOrEmpty(links) ? "&link_min=" + links : "")/* + (corrupted ? "&corrupted=1" : "")*/;
-            var linksquery =
-                "\"filters\":{\"type_filters\":{\"filters\":{}},\"socket_filters\":{\"filters\":{\"links\":{\"min\":" +
-                links + ",\"max\":" + links + "}}}},";
-            var tradelink = "https://www.pathofexile.com/api/trade/search/" + league + "?redirect&source={\"query\":{" +
-                            (string.IsNullOrEmpty(links) ? string.Empty : linksquery) + "\"name\":\"" + name + "\"}}";
-            try
+            var item = ItemSearch(srch.Trim(' '));
+            if (string.IsNullOrEmpty(item.Name))
             {
-                var myHttpWebRequest = (HttpWebRequest) WebRequest.Create(tradelink);
-                var myHttpWebResponse = (HttpWebResponse) myHttpWebRequest.GetResponse();
-                tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
-            }
-            catch
-            {
-                tradelink = "https://www.pathofexile.com/api/trade/search/" + league +
-                            "?redirect&source={\"query\":{\"type\":\"" + name + "\"}}";
-                try
-                {
-                    var myHttpWebRequest = (HttpWebRequest) WebRequest.Create(tradelink);
-                    var myHttpWebResponse = (HttpWebResponse) myHttpWebRequest.GetResponse();
-                    tradelink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
-                }
-                catch
-                {
-                    tradelink = string.Empty;
-                }
+                return new Message(item.Url);
             }
 
-            JArray history;
-            lock (requestLocker)
+            var priceData = api.GetPrice(item.Name, league, links);
+            if (priceData == null)
             {
-                try
-                {
-                    history = Poewatch.ItemHistory(jo["id"].Value<string>(), league);
-                }
-                catch (Exception e)
-                {
-                    Logger.Log.Error($"{e.Message} at {GetType()}");
-                    return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
-                }
+                return new Message(ResponseDictionary.NoPriceData(chatLanguage.Language, item.Name, league));
             }
-
-            lock (requestLocker)
-            {
-                try
-                {
-                    jo = Poewatch.Item(jo["id"].Value<string>());
-                }
-                catch (Exception e)
-                {
-                    Logger.Log.Error($"{e.Message} at {GetType()}");
-                    return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
-                }
-            }
-
-            ja = JArray.Parse(jo["leagues"].ToString());
-            jo = ja.Children<JObject>().FirstOrDefault(o => o["name"].Value<string>() == league);
-            if (jo == null) return new Message(ResponseDictionary.NoPriceData(chatLanguage.Language, name, league));
 
             byte[] plotBytes = null;
-            if (history.Count != 0)
+            if (priceData.PriceHistory.Any())
             {
                 var series = new LineSeries();
-                foreach (var ele in history)
+                foreach (var ele in priceData.PriceHistory)
                 {
-                    var median = float.Parse(ele["median"].ToString());
-                    var date = ele["time"].ToString().Substring(0, ele["time"].ToString().IndexOf(' '));
-                    series.Points.Add(new DataPoint(DateTimeAxis.ToDouble(Convert.ToDateTime(date)), median));
+                    series.Points.Add(new DataPoint(DateTimeAxis.ToDouble(ele.Key), ele.Value));
                 }
 
                 var plot = new PlotModel();
@@ -280,7 +183,7 @@ namespace BotHandlers
                 });
                 plot.Series.Add(series);
                 using var memstream = new MemoryStream();
-                var pngExporter = new PngExporter {Width = 1000, Height = 400, Background = OxyColors.White};
+                var pngExporter = new PngExporter { Width = 1000, Height = 400, Background = OxyColors.White };
                 pngExporter.Export(plot, memstream);
                 plotBytes = memstream.ToArray();
             }
@@ -288,35 +191,33 @@ namespace BotHandlers
             photo.UploadPhoto(plotBytes);
             return new Message
             (
-                ResponseDictionary.PriceResponce(chatLanguage.Language, name, links, league, tradelink, jo),
+                ResponseDictionary.PriceResponce(chatLanguage.Language, item.Name, links, league, priceData),
                 photo
             );
         }
 
         private Message HelpMe(string req)
         {
-            if (!poewatch.IsDataLoaded)
+            if (!api.IsDataLoaded)
             {
                 return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
-            var pattern = req.Replace("the ", @"the\s");
-            var regex = new Regex(pattern.Replace(" ", @"\D*\s\D*") + @"\D*");
-            var items = poewatch.Where(o => regex.IsMatch(o["name"].Value<string>().ToLower())
-                                            && Poewatch.TradeCategories.Contains(o["category"].Value<string>()));
-            var searchResults = items.Select(o => o["name"].Value<string>()).Distinct();
-            if (searchResults.Count() > 30)
+
+            var items = api.ItemsSearch(req);
+            if (items.Count() > 30)
                 return new Message(ResponseDictionary.ToManyResults(chatLanguage.Language));
-            if (!searchResults.Any())
+            if (!items.Any())
                 return new Message(ResponseDictionary.NoResults(chatLanguage.Language, req));
-            return new Message(ResponseDictionary.PossibleVariants(chatLanguage.Language, searchResults));
+            return new Message(ResponseDictionary.PossibleVariants(chatLanguage.Language, items));
         }
 
         private Message PoeninjaBuilds(string srch)
         {
-            if (!poewatch.IsDataLoaded)
+            if (!api.IsDataLoaded)
             {
                 return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
+
             var items = new List<string>();
             while (srch.IndexOf('+') > 0)
             {
@@ -331,79 +232,75 @@ namespace BotHandlers
             var keystones = new List<string>();
             foreach (var item in items)
             {
-                var regex = new Regex($@"^{item.Replace(" ", @"\D*")}\D*");
-                var theRegex = new Regex($@"^the {item.Replace(" ", @"\D*")}\D*");
-                var jo = poewatch.FirstOrDefault(o =>
-                    (regex.IsMatch(o["name"].Value<string>().ToLower()) ||
-                     theRegex.IsMatch(o["name"].Value<string>().ToLower()))
-                    && o["category"].Value<string>() != "enchantment");
-                string result, category;
-                if (jo == null)
+                var result = api.ItemSearch(item);
+                string name, category;
+                if (result.Name == null)
                 {
                     try
                     {
-                        result = WikiOpensearch(item)[1][0].Value<string>();
+                        name = WikiOpensearch(item)[1][0].Value<string>();
                     }
                     catch
                     {
                         return new Message(ResponseDictionary.CouldntDetermine(chatLanguage.Language, item));
                     }
 
-                    category = "keystone";
+                    category = "Keystone";
                 }
                 else
                 {
-                    result = jo["name"].Value<string>();
-                    category = jo["category"].Value<string>();
+                    name = result.Name;
+                    category = result.Caregory;
                 }
 
                 switch (category)
                 {
-                    case "weapon":
-                    {
-                        uniques.Add(result);
-                        break;
-                    }
-                    case "accessory":
-                    {
-                        uniques.Add(result);
-                        break;
-                    }
-                    case "armour":
-                    {
-                        uniques.Add(result);
-                        break;
-                    }
-                    case "jewel":
-                    {
-                        uniques.Add(result);
-                        break;
-                    }
-                    case "flask":
-                    {
-                        uniques.Add(result);
-                        break;
-                    }
-                    case "gem":
-                    {
-                        if (jo["group"].Value<string>() == "support")
-                            return new Message(ResponseDictionary.SupportsNotSupported(chatLanguage.Language));
-                        skills.Add(result);
-                        break;
-                    }
-                    case "keystone":
-                    {
-                        keystones.Add(result);
-                        break;
-                    }
+                    case "Weapons":
+                        {
+                            uniques.Add(name);
+                            break;
+                        }
+                    case "Accessories":
+                        {
+                            uniques.Add(name);
+                            break;
+                        }
+                    case "Armour":
+                        {
+                            uniques.Add(name);
+                            break;
+                        }
+                    case "Jewels":
+                        {
+                            uniques.Add(name);
+                            break;
+                        }
+                    case "Flasks":
+                        {
+                            uniques.Add(name);
+                            break;
+                        }
+                    case "Gems":
+                        {
+                            if (name.Contains("Support"))
+                                return new Message(ResponseDictionary.SupportsNotSupported(chatLanguage.Language));
+                            skills.Add(name);
+                            break;
+                        }
+                    case "Keystone":
+                        {
+                            keystones.Add(name);
+                            break;
+                        }
                     default:
-                    {
-                        return new Message(ResponseDictionary.CouldntDetermine(chatLanguage.Language, item));
-                    }
+                        {
+                            return new Message(ResponseDictionary.CouldntDetermine(chatLanguage.Language, item));
+                        }
                 }
             }
 
-            string fstRetStr = ResponseDictionary.BuildsThatUse(chatLanguage.Language), sndRetStr = ":\nhttps://poe.ninja/challenge/builds?";
+            string fstRetStr = ResponseDictionary.BuildsThatUse(chatLanguage.Language),
+                sndRetStr = ":\nhttps://poe.ninja/challenge/builds?";
             if (uniques.Count > 0)
             {
                 sndRetStr += "item=";
@@ -452,9 +349,9 @@ namespace BotHandlers
             {
                 result = WikiOpensearch(search, search[0] > 191);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger.Log.Error($"{e.Message} at {GetType()}");
+                Logger.Log.Error($"{GetType()} {ex}");
                 return ("", ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
 
@@ -465,18 +362,15 @@ namespace BotHandlers
             }
             else
             {
-                if (!poewatch.IsDataLoaded)
+                if (!api.IsDataLoaded)
                 {
                     return ("", ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
                 }
-                var regex = new Regex($@"^{search.Replace(" ", @"\D*")}\D*");
-                var theRegex = new Regex($@"^the {search.Replace(" ", @"\D*")}\D*");
-                var item = poewatch.FirstOrDefault(o =>
-                    regex.IsMatch(o["name"].Value<string>().ToLower()) ||
-                    theRegex.IsMatch(o["name"].Value<string>().ToLower()));
-                if (item != null)
+
+                var item = api.ItemSearch(search);
+                if (item.Name != null)
                 {
-                    name = item["name"].Value<string>();
+                    name = item.Name;
                     url = "https://pathofexile.gamepedia.com/" +
                           $"{name.Replace(' ', '_')}";
                 }
@@ -512,19 +406,19 @@ namespace BotHandlers
                 switch (os.Platform)
                 {
                     case PlatformID.Win32NT:
-                    {
-                        driverDirectory = Environment.CurrentDirectory;
-                        break;
-                    }
+                        {
+                            driverDirectory = Environment.CurrentDirectory;
+                            break;
+                        }
                     case PlatformID.Unix:
-                    {
-                        driverDirectory = "/usr/bin";
-                        break;
-                    }
+                        {
+                            driverDirectory = "/usr/bin";
+                            break;
+                        }
                     default:
-                    {
-                        return new Message(ResponseDictionary.SomethingWrong(chatLanguage.Language));
-                    }
+                        {
+                            return new Message(ResponseDictionary.SomethingWrong(chatLanguage.Language));
+                        }
                 }
 
                 try
@@ -574,9 +468,9 @@ namespace BotHandlers
                     photo.SavePhoto(name.Replace(' ', '-').Replace("'", "").ToLower(),
                         memoryStream.ToArray());
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    Logger.Log.Error($"{GetType()} {ex}");
                     return new Message(ResponseDictionary.ImageFailed(chatLanguage.Language, name));
                 }
             }
@@ -586,39 +480,46 @@ namespace BotHandlers
 
         private Message LabLayout(string search)
         {
+            var labNum = 0;
             var regex = new Regex(@"^" + search.ToLower() + @"\S*");
-            try
+            if (!int.TryParse(search, out labNum))
             {
-                search = labLayouts[int.Parse(search) - 1];
-            }
-            catch
-            {
-                foreach (var layout in labLayouts)
+                for (int i = 0; i < 4; i++)
                 {
-                    if (regex.IsMatch(layout))
+                    if (regex.IsMatch(labLayouts[i]))
                     {
-                        search = layout;
-                        break;
+                        labNum = i + 1;
                     }
-
-                    if (layout == labLayouts.Last())
-                        return new Message(ResponseDictionary.IncorrectLabDifficulty(chatLanguage.Language));
                 }
             }
+            if (labNum < 1 || labNum > 4)
+            {
+                return new Message(ResponseDictionary.IncorrectLabDifficulty(chatLanguage.Language));
+            }
 
-            using var wc = new WebClient();
-            var date = DateTime.Today;
-            var layouturl = "https://www.poelab.com/wp-content/labfiles/" +
-                            $"{date.Year}-{date.Month:00}-{date.Day:00}_{search}.jpg";
             try
             {
-                var data = wc.DownloadData(layouturl);
+                var web = new HtmlWeb();
+                var hd = web.Load("https://www.poelab.com/");
+                var labs = hd.DocumentNode.SelectNodes("//div[@class='su-column-inner su-clearfix']");
+                if (labs.Count != 4)
+                {
+                    return new Message(ResponseDictionary.SomethingWrong(chatLanguage.Language));
+                }
+                var href = labs[4 - labNum].SelectSingleNode(".//a[@href]");
+                var labUrl = href.GetAttributeValue("href", string.Empty);
+                var labDoc = web.Load(labUrl);
+                var img = labDoc.DocumentNode.SelectSingleNode(".//img[@id='notesImg']");
+                var labImageUrl = img.GetAttributeValue("src", string.Empty);
+
+                using var wc = new WebClient();
+                var data = wc.DownloadData(labImageUrl);
                 photo.UploadPhoto(data);
                 return new Message(photo: photo);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger.Log.Error($"{e.Message} at {GetType()}");
+                Logger.Log.Error($"{GetType()} {ex}");
                 return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
         }
@@ -634,102 +535,73 @@ namespace BotHandlers
             return new Message(photo: photo);
         }
 
-        private Message TopPrices(string request)
+        /*private Message TopPrices(string request)
         {
-            if (!poewatch.IsDataLoaded)
+            if (!api.IsDataLoaded)
             {
                 return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
             var formatHint = ResponseDictionary.HintFormat(chatLanguage.Language);
             var split = request.Split(' ');
-            if (!Poewatch.TradeCategories.Contains(split[0]))
-                return new Message(ResponseDictionary.IncorrectCategory(chatLanguage.Language, Poewatch.TradeCategories));
+            if (!api.TradeCategories.Contains(split[0]))
+                return new Message(ResponseDictionary.IncorrectCategory(chatLanguage.Language, api.TradeCategories));
             var num = 10;
             var group = "";
             switch (split.Length)
             {
                 case 2:
-                {
-                    try
                     {
-                        num = int.Parse(split[1]);
-                    }
-                    catch
-                    {
-                        group = split[1];
-                    }
+                        try
+                        {
+                            num = int.Parse(split[1]);
+                        }
+                        catch
+                        {
+                            group = split[1];
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 case 3:
-                {
-                    if (!int.TryParse(split[1], out num)) return new Message(formatHint);
-                    group = split[2];
-                    break;
-                }
+                    {
+                        if (!int.TryParse(split[1], out num)) return new Message(formatHint);
+                        group = split[2];
+                        break;
+                    }
             }
 
             if (num < 1) return new Message(formatHint);
-            var ja = poewatch.Get(split[0]);
+            var ja = api.Get(split[0]);
             if (ja == null || ja.Count == 0) return new Message(ResponseDictionary.UnableToObtainPrice(chatLanguage.Language));
             var results = ja.Children<JObject>().Where(o =>
                 (!string.IsNullOrEmpty(group) ? o["group"].Value<string>() == group : true)
                 && (split[0] == "gem"
-                    ? (o["gemLevel"].Value<int>() == 20 && (string) o["gemQuality"] == "20" &&
+                    ? (o["gemLevel"].Value<int>() == 20 && (string)o["gemQuality"] == "20" &&
                        o["gemIsCorrupted"].Value<bool>() == false)
                     : true)
                 && o["linkCount"]?.Value<string>() == null);
             if (!results.Any())
                 return new Message(ResponseDictionary.IncorrectGroup(chatLanguage.Language, ja));
             return new Message(ResponseDictionary.TopPricesResponce(chatLanguage.Language, num, split[0], group, results));
-        }
+        }*/
 
         private Message GetCharInfo(string charName)
         {
-            JArray ja;
-            try
-            {
-                ja = Poewatch.Accounts(charName);
-            }
-            catch (Exception e)
-            {
-                Logger.Log.Error($"{e.Message} at {GetType()}");
-                return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
-            }
-
-            string account;
-            try
-            {
-                account = (string) ja[0]["account"];
-            }
-            catch
-            {
+            var account = api.GetAccountName(charName);
+            if (account == null)
                 return new Message(ResponseDictionary.CharacterNotFound(chatLanguage.Language));
-            }
 
-            ja = Poewatch.Characters(account);
-            charName =
-                ja.FirstOrDefault(o => o["character"].Value<string>().ToLower() == charName.ToLower())["character"]
-                    .Value<string>();
+            var characters = api.GetCharactersList(account);
+            charName = characters.FirstOrDefault(c => c.Name.ToLower() == charName.ToLower()).Name;
             return new Message("http://poe-profile.info/profile/" + $"{account}/{charName}");
         }
 
         private Message GetCharList(string account)
         {
-            JArray ja;
-            try
-            {
-                ja = Poewatch.Characters(account);
-            }
-            catch (Exception e)
-            {
-                Logger.Log.Error($"{e.Message} at {GetType()}");
-                return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
-            }
-
-            if (ja.Count == 0)
+            var characters = api.GetCharactersList(account);
+            if (characters == null)
                 return new Message(ResponseDictionary.ProfileNotFound(chatLanguage.Language));
-            return new Message(ResponseDictionary.CharListResponce(chatLanguage.Language, account, ja));
+            return new Message(ResponseDictionary.CharListResponce(chatLanguage.Language, account, characters));
         }
 
         private Message SubToRss(string prs)
@@ -742,9 +614,9 @@ namespace BotHandlers
                 {
                     subs = File.ReadAllLines(parameters[2]).ToList();
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    Logger.Log.Error($"{GetType()} {ex}");
                     return new Message(ResponseDictionary.SubscriptionFailed(chatLanguage.Language));
                 }
 
@@ -770,9 +642,9 @@ namespace BotHandlers
 
                     return new Message(ResponseDictionary.RssUnsubscription(chatLanguage.Language, parameters[0]));
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    Logger.Log.Error($"{GetType()} {ex}");
                     return new Message(ResponseDictionary.SubscriptionFailed(chatLanguage.Language));
                 }
             }
@@ -782,14 +654,14 @@ namespace BotHandlers
 
         private Message ChangeResponseLanguage(string language)
         {
-            ResponceLanguage languageEnum;
+            ResponseLanguage languageEnum;
             try
             {
                 languageEnum = ResponseDictionary.CodeToEnum(language);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger.Log.Error($"{e.Message} at {GetType()}");
+                Logger.Log.Error($"{GetType()} {ex}");
                 return new Message(ResponseDictionary.IncorrectLanguage(chatLanguage.Language));
             }
 
@@ -817,9 +689,9 @@ namespace BotHandlers
                 photo.UploadPhoto(data);
                 return new Message(text: title, photo: photo);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger.Log.Error($"{e.Message} at {GetType()}");
+                Logger.Log.Error($"{GetType()} {ex}");
                 return null;
             }
         }
@@ -830,7 +702,7 @@ namespace BotHandlers
             {
                 url = "http://pastebin.com/raw/" + Regex.Split(url, "https://pastebin.com/")[1];
                 var pobcode = Common.GetContent(url);
-                var request = (HttpWebRequest) WebRequest.Create("https://pob.party/kv/put?ver=latest");
+                var request = (HttpWebRequest)WebRequest.Create("https://pob.party/kv/put?ver=latest");
                 var data = Encoding.ASCII.GetBytes(pobcode);
                 request.Method = "POST";
                 request.ContentType = "text/plain";
@@ -840,16 +712,16 @@ namespace BotHandlers
                     stream.Write(data, 0, data.Length);
                 }
 
-                var response = (HttpWebResponse) request.GetResponse();
+                var response = (HttpWebResponse)request.GetResponse();
                 string responseString;
                 using (var streamReader = new StreamReader(response.GetResponseStream()))
                     responseString = streamReader.ReadToEnd();
                 var jo = JObject.Parse(responseString);
                 return new Message(text: "https://pob.party/share/" + jo["url"].Value<string>());
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger.Log.Error($"{e.Message} at {GetType()}");
+                Logger.Log.Error($"{GetType()} {ex}");
                 return null;
             }
         }

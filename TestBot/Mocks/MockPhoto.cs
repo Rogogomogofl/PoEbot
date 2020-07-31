@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using BotHandlers;
 using BotHandlers.Abstracts;
 
 namespace TestBot.Mocks
@@ -12,6 +11,11 @@ namespace TestBot.Mocks
 
         public override bool SavePhoto(string name, byte[] bytes)
         {
+            if (bytes == null)
+            {
+                return false;
+            }
+
             using var stream = new MemoryStream(bytes);
             var bmp = new Bitmap(stream);
             bmp.Save("image.png", ImageFormat.Png);
@@ -22,6 +26,11 @@ namespace TestBot.Mocks
 
         public override bool UploadPhoto(byte[] bytes)
         {
+            if (bytes == null)
+            {
+                return false;
+            }
+
             using var stream = new MemoryStream(bytes);
             var bmp = new Bitmap(stream);
             bmp.Save("image.png", ImageFormat.Png);

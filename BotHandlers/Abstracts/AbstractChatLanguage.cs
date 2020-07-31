@@ -6,12 +6,12 @@ namespace BotHandlers.Abstracts
     {
         protected readonly string langPath;
         protected readonly long id;
-        protected readonly Dictionary<long, ResponceLanguage> langsDictionary;
+        protected readonly Dictionary<long, ResponseLanguage> langsDictionary;
 
-        protected ResponceLanguage? language;
-        public abstract ResponceLanguage Language { get; set; }
+        protected ResponseLanguage? language;
+        public abstract ResponseLanguage Language { get; set; }
 
-        protected AbstractChatLanguage(string langPath, long id, Dictionary<long, ResponceLanguage> langsDictionary)
+        protected AbstractChatLanguage(string langPath, long id, Dictionary<long, ResponseLanguage> langsDictionary)
         {
             this.langPath = langPath;
             this.id = id;

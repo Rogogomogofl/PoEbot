@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using System.Xml;
 using BotHandlers;
+using BotHandlers.APIs;
 using TestBot.Mocks;
 
 namespace TestBot
@@ -28,18 +29,18 @@ namespace TestBot
             _rssUpdate.AutoReset = true;
             //_rssUpdate.Enabled = true;
 
-            var language = new Dictionary<long, ResponceLanguage>
+            var language = new Dictionary<long, ResponseLanguage>
             {
-                { 0, ResponceLanguage.Russain }
+                { 0, ResponseLanguage.Russain }
             };
 
-            var poewatch = new Poewatch();
+            var api = new PoeApi();
 
             Console.WriteLine("Working");
 
             while (true)
             {
-                var poebot = new Poebot(poewatch, new MockPhoto(), new MockLanguage(language));
+                var poebot = new Poebot(api, new MockPhoto(), new MockLanguage(language));
                 var query = Console.ReadLine();
                 if (string.IsNullOrEmpty(query)) continue;
                 var sw = new Stopwatch();
@@ -79,7 +80,7 @@ namespace TestBot
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"{DateTime.Now}: {ex.Message} at {GetType()}");
+                    Console.WriteLine($"{DateTime.Now}: {GetType()} {ex}");
                 }
             });
         }

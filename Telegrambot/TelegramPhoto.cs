@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using BotHandlers;
 using BotHandlers.Abstracts;
 using Telegram.Bot;
@@ -12,7 +11,7 @@ namespace TelegramBot
     public class TelegramPhoto : AbstractPhoto
     {
         private readonly TelegramBotClient botClient;
-        private Task photoUploader;
+        private Action photoUploader;
 
         public TelegramPhoto(string cachePath, long id, TelegramBotClient botClient) : base(cachePath, id)
         {
@@ -49,7 +48,7 @@ namespace TelegramBot
         {
             if (Content == null)
             {
-                photoUploader?.RunSynchronously();
+                photoUploader?.Invoke();
             }
 
             return (string[]) Content?.Clone();
@@ -74,7 +73,12 @@ namespace TelegramBot
 
         public override bool SavePhoto(string name, byte[] bytes)
         {
-            photoUploader = new Task(() =>
+            if (bytes == null)
+            {
+                return false;
+            }
+
+            photoUploader = () =>
             {
                 try
                 {
@@ -83,28 +87,34 @@ namespace TelegramBot
                     using var streamWriter = new StreamWriter(CachePath, true, Encoding.Default);
                     streamWriter.WriteLine("{0} {1}", name, returnedMessage.Photo.Last().FileId);
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    Logger.Log.Error($"{GetType()} {ex}");
                 }
-            });
+            };
+
             return true;
         }
 
         public override bool UploadPhoto(byte[] bytes)
         {
-            photoUploader = new Task(() =>
+            if (bytes == null)
+            {
+                return false;
+            }
+
+            photoUploader = () =>
             {
                 try
                 {
                     using var stream = new MemoryStream(bytes);
                     botClient.SendPhotoAsync(chatId: Id, photo: stream).Wait();
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    Logger.Log.Error($"{GetType()} {ex}");
                 }
-            });
+            };
             return true;
         }
     }

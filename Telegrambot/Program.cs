@@ -2,14 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.ServiceModel.Syndication;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
 using BotHandlers;
+using BotHandlers.Abstracts;
+using BotHandlers.APIs;
 using MihaZupan;
 using Telegram.Bot;
 using Telegram.Bot.Args;
@@ -18,14 +15,15 @@ namespace TelegramBot
 {
     internal class Program
     {
-        private static TelegramBotClient _telegramBot;
         private const string SubPath = @"bot/telegramsub.txt";
         private const string CachePath = @"bot/telegramcache.txt";
         private const string LangPath = @"bot/telegramlang.txt";
-        private static readonly Poewatch Poewatch = new Poewatch();
-        private static SyndicationItem _lastEn, _lastRu;
-        private static Timer _rssUpdate;
-        private static readonly Dictionary<long, ResponceLanguage> LangsDictionary = new Dictionary<long, ResponceLanguage>();
+
+        private static readonly AbstractApi Api = new PoeApi();
+
+        private static RssSubscriber _rssSubscriber;
+        private static TelegramBotClient _telegramBot;
+        private static Dictionary<long, ResponseLanguage> _langsDictionary;
 
         private static void Main()
         {
@@ -37,12 +35,9 @@ namespace TelegramBot
 
             Logger.InitLogger();
 
-            ChatLanguage.LoadDictionary(LangPath, LangsDictionary);
-
-            _rssUpdate = new Timer(5 * 60 * 1000);
-            _rssUpdate.Elapsed += UpdateRss;
-            _rssUpdate.AutoReset = true;
-            _rssUpdate.Enabled = true;
+            _langsDictionary = ChatLanguage.LoadDictionary(LangPath);
+            _rssSubscriber = new RssSubscriber(SubPath);
+            _rssSubscriber.RssUpdated += RssUpdated;
 
             var proxy = new HttpToSocks5Proxy("103.111.183.18", 1080)
             {
@@ -70,10 +65,9 @@ namespace TelegramBot
                     else return;
                 }
 
-                var chats = File.ReadAllLines(LangPath); //to do
-                var poebot = new Poebot(Poewatch, 
+                var poebot = new Poebot(Api, 
                     new TelegramPhoto(CachePath, e.Message.Chat.Id, _telegramBot),
-                    new ChatLanguage(LangPath, e.Message.Chat.Id, LangsDictionary));
+                    new ChatLanguage(LangPath, e.Message.Chat.Id, _langsDictionary));
                 var sw = new Stopwatch();
                 sw.Start();
                 var request = e.Message.Text;
@@ -82,11 +76,11 @@ namespace TelegramBot
                 var message = poebot.ProcessRequest(request);
                 if (message == null) return;
                 if (message.Text != null)
-                    _telegramBot.SendTextMessageAsync(chatId: e.Message.Chat.Id, text: message.Text);
+                    _telegramBot.SendTextMessageAsync(e.Message.Chat.Id, message.Text);
                 var content = message.Photo?.GetContent();
                 if (content != null)
                 {
-                    _telegramBot.SendPhotoAsync(chatId: e.Message.Chat.Id, photo: content[0]);
+                    _telegramBot.SendPhotoAsync(e.Message.Chat.Id, content[0]);
                 }
 
                 sw.Stop();
@@ -95,50 +89,9 @@ namespace TelegramBot
             });
         }
 
-        private static void UpdateRss(object sender, ElapsedEventArgs e)
+        private static void RssUpdated(object sender, RssUpdatedEventArgs e)
         {
-            try
-            {
-                var subs = File.ReadAllLines(SubPath).ToList();
-                using (var r = XmlReader.Create("https://www.pathofexile.com/news/rss"))
-                {
-                    var feed = SyndicationFeed.Load(r);
-                    var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
-                    if (_lastEn == null) _lastEn = last;
-                    if (last.Links[0].Uri != _lastEn.Links[0].Uri)
-                    {
-                        _lastEn = last;
-                        var enSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sen"));
-                        foreach (var sub in enSubs)
-                            _telegramBot.SendTextMessageAsync(chatId: long.Parse(sub.Split(' ')[0]),
-                                text: _lastEn.Title.Text + '\n' + _lastEn.Links[0].Uri);
-                    }
-                }
-
-                using (var r = XmlReader.Create("https://ru.pathofexile.com/news/rss"))
-                {
-                    var feed = SyndicationFeed.Load(r);
-                    var last = feed.Items.OrderByDescending(x => x.PublishDate).First();
-                    if (_lastRu == null) _lastRu = last;
-                    if (last.Links[0].Uri != _lastRu.Links[0].Uri)
-                    {
-                        _lastRu = last;
-                        var ruSubs = subs.Where(x => Regex.IsMatch(x, @"\d+\sru"));
-                        foreach (var sub in ruSubs)
-                            _telegramBot.SendTextMessageAsync(chatId: long.Parse(sub.Split(' ')[0]),
-                                text: _lastRu.Title.Text + '\n' + _lastRu.Links[0].Uri);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Log.Error($"{ex.Message} at {GetType()}");
-            }
-        }
-
-        public new static Type GetType()
-        {
-            return typeof(Program);
+            _telegramBot.SendTextMessageAsync(e.Id, e.Message);
         }
     }
 }

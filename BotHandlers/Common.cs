@@ -17,9 +17,9 @@ namespace BotHandlers
                 using var reader = new StreamReader(response.GetResponseStream());
                 output = reader.ReadToEnd();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger.Log.Error($"{e.Message} at BotHandlers.Common.GetContent");
+                Logger.Log.Error($"{ex} at BotHandlers.Common.GetContent");
             }
 
             return output;

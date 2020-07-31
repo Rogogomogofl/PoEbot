@@ -8,13 +8,12 @@ namespace BotHandlers
 {
     public class ChatLanguage : AbstractChatLanguage
     {
-
-        public override ResponceLanguage Language
+        public override ResponseLanguage Language
         {
             get
             {
-                language ??= langsDictionary.ContainsKey(id) ? langsDictionary[id] : ResponceLanguage.Russain;
-                return (ResponceLanguage)language;
+                language ??= langsDictionary.ContainsKey(id) ? langsDictionary[id] : ResponseLanguage.Russain;
+                return (ResponseLanguage)language;
             }
 
             set
@@ -36,17 +35,18 @@ namespace BotHandlers
                     foreach (var lang in langsDictionary)
                         sw.WriteLine($"{lang.Key} {ResponseDictionary.EnumToCode(lang.Value)}");
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Logger.Log.Error($"{e.Message} at {GetType()}");
+                    Logger.Log.Error($"{GetType()} {ex}");
                 }
             }
         }
 
-        public ChatLanguage(string langPath, long id, Dictionary<long, ResponceLanguage> langsDictionary) : base(langPath, id, langsDictionary) {}
+        public ChatLanguage(string langPath, long id, Dictionary<long, ResponseLanguage> langsDictionary) : base(langPath, id, langsDictionary) {}
 
-        public static void LoadDictionary(string path, Dictionary<long, ResponceLanguage> dictionary)
+        public static Dictionary<long, ResponseLanguage> LoadDictionary(string path)
         {
+            Dictionary<long, ResponseLanguage> dictionary = new Dictionary<long, ResponseLanguage>();
             try
             {
                 var lines = File.ReadAllLines(path);
@@ -56,10 +56,12 @@ namespace BotHandlers
                     dictionary.Add(long.Parse(parameters[0]), ResponseDictionary.CodeToEnum(parameters[1]));
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger.Log.Error($"{e.Message} at BotHandlers.ChatLanguage.LoadDictionary");
+                Logger.Log.Error($"{ex} at BotHandlers.ChatLanguage.LoadDictionary");
             }
+
+            return dictionary;
         }
     }
 }

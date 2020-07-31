@@ -20,6 +20,11 @@ namespace VkBot
 
         public override bool SavePhoto(string name, byte[] bytes)
         {
+            if (bytes == null)
+            {
+                return false;
+            }
+
             try
             {
                 var uploadServer = vkPhoto.GetMessagesUploadServer(Id);
@@ -45,9 +50,9 @@ namespace VkBot
                 Content = new[] {photo[0].Id.ToString(), photo[0].OwnerId.ToString()};
                 return true;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger.Log.Error($"{e.Message} at {GetType()}");
+                Logger.Log.Error($"{GetType()} {ex}");
                 return false;
             }
         }
@@ -106,6 +111,11 @@ namespace VkBot
 
         public override bool UploadPhoto(byte[] bytes)
         {
+            if (bytes == null)
+            {
+                return false;
+            }
+
             try
             {
                 var uploadServer = vkPhoto.GetMessagesUploadServer(Id);
@@ -126,9 +136,9 @@ namespace VkBot
                 Content = new[] {photo[0].Id.ToString(), photo[0].OwnerId.ToString()};
                 return true;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger.Log.Error($"{e.Message} at {GetType()}");
+                Logger.Log.Error($"{GetType()} {ex}");
                 return false;
             }
         }
