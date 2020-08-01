@@ -69,6 +69,8 @@
     <Compile Include="Abstracts\AbstractAPI.cs" />
     <Compile Include="Abstracts\AbstractChatLanguage.cs" />
     <Compile Include="APIs\PoeNinjaAPI.cs" />
+    <Compile Include="Mocks\MockLanguage.cs" />
+    <Compile Include="Mocks\MockPhoto.cs" />
     <Compile Include="Models\ChatLanguage.cs" />
     <Compile Include="Abstracts\AbstractPhoto.cs" />
     <Compile Include="Static\Common.cs" />

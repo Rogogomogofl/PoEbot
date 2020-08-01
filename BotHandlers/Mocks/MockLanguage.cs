@@ -2,9 +2,9 @@
 using BotHandlers.Abstracts;
 using BotHandlers.Methods;
 
-namespace TestBot.Mocks
+namespace BotHandlers.Mocks
 {
-    internal class MockLanguage : AbstractChatLanguage
+    public class MockLanguage : AbstractChatLanguage
     {
         public override ResponseLanguage Language
         {

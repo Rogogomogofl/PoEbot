@@ -13,7 +13,7 @@ namespace BotHandlers.Methods
         English
     }
 
-    public static class ResponseDictionary
+    internal static class ResponseDictionary
     {
         public static ResponseLanguage CodeToEnum(string code)
         {
@@ -393,12 +393,12 @@ namespace BotHandlers.Methods
             {
                 case ResponseLanguage.Russain:
                 {
-                    charsDiscription = characters.Aggregate(charsDiscription, (current, character) => current + $"\n{character.Name} (лига: {character.League}");
+                    charsDiscription = characters.Aggregate(charsDiscription, (current, character) => current + $"\n{character.Name} (лига: {character.League})");
                     return $"Список доступных для отображения персонажей профиля {account}:\n{charsDiscription}";
                 }
                 case ResponseLanguage.English:
                 {
-                    charsDiscription = characters.Aggregate(charsDiscription, (current, character) => current + $"\n{character.Name} (league: {character.League}");
+                    charsDiscription = characters.Aggregate(charsDiscription, (current, character) => current + $"\n{character.Name} (league: {character.League})");
                     return $"List of characters available to display in {account} profile:\n{charsDiscription}";
                 }
                 default:

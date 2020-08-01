@@ -204,7 +204,7 @@ namespace BotHandlers.Methods
             }
 
             var items = api.ItemsSearch(req);
-            if (items.Count() > 30)
+            if (items.Length > 30)
                 return new Message(ResponseDictionary.ToManyResults(chatLanguage.Language));
             if (!items.Any())
                 return new Message(ResponseDictionary.NoResults(chatLanguage.Language, req));
@@ -477,9 +477,8 @@ namespace BotHandlers.Methods
 
         private Message LabLayout(string search)
         {
-            var labNum = 0;
             var regex = new Regex(@"^" + search.ToLower() + @"\S*");
-            if (!int.TryParse(search, out labNum))
+            if (!int.TryParse(search, out var labNum))
             {
                 for (int i = 0; i < 4; i++)
                 {
@@ -596,9 +595,9 @@ namespace BotHandlers.Methods
         private Message GetCharList(string account)
         {
             var characters = api.GetCharactersList(account);
-            if (characters == null)
-                return new Message(ResponseDictionary.ProfileNotFound(chatLanguage.Language));
-            return new Message(ResponseDictionary.CharListResponce(chatLanguage.Language, account, characters));
+            return characters == null ?
+                new Message(ResponseDictionary.ProfileNotFound(chatLanguage.Language)) : 
+                new Message(ResponseDictionary.CharListResponce(chatLanguage.Language, account, characters));
         }
 
         private Message SubToRss(string prs)
@@ -678,7 +677,7 @@ namespace BotHandlers.Methods
                 var hd = web.Load(url);
                 var title = hd.DocumentNode.SelectSingleNode("//h1[contains(@class, '_eYtD2XCVieq6emjKBH3m')]")
                     .InnerText.Replace("&#x27;", "'");
-                var node = hd.DocumentNode.SelectSingleNode("//a[contains(@class, 'b5szba-0')]");
+                var node = hd.DocumentNode.SelectSingleNode("//a[contains(@class, '_13svhQIUZqD9PVzFcLwOKT styled-outbound-link')]");
                 node ??= hd.DocumentNode.SelectSingleNode("//img[contains(@class, '_2_tDEnGMLxpM6uOa2kaDB3')]")
                     .ParentNode;
                 using var wc = new WebClient();

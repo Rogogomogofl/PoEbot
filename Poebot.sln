@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotHandlers", "BotHandlers\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestBot", "TestBot\TestBot.csproj", "{6F4BDBDA-4C59-4A22-A4BA-81629EC4EAF1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotUnitTests", "BotUnitTests\BotUnitTests.csproj", "{DA32DE81-592B-4248-AC51-AD36CC18EF5A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{73E32F40-104E-4BBE-809B-21DAC244FF43}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,9 +37,17 @@ Global
 		{6F4BDBDA-4C59-4A22-A4BA-81629EC4EAF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F4BDBDA-4C59-4A22-A4BA-81629EC4EAF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F4BDBDA-4C59-4A22-A4BA-81629EC4EAF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA32DE81-592B-4248-AC51-AD36CC18EF5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA32DE81-592B-4248-AC51-AD36CC18EF5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA32DE81-592B-4248-AC51-AD36CC18EF5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA32DE81-592B-4248-AC51-AD36CC18EF5A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6F4BDBDA-4C59-4A22-A4BA-81629EC4EAF1} = {73E32F40-104E-4BBE-809B-21DAC244FF43}
+		{DA32DE81-592B-4248-AC51-AD36CC18EF5A} = {73E32F40-104E-4BBE-809B-21DAC244FF43}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {850E36BF-A3B5-4805-A587-500DDB504A49}

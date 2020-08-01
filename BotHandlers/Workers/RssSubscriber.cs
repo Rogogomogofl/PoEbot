@@ -8,7 +8,7 @@ using System.Timers;
 using System.Xml;
 using BotHandlers.Static;
 
-namespace BotHandlers
+namespace BotHandlers.Workers
 {
     public class RssUpdatedEventArgs : EventArgs
     {
@@ -26,7 +26,7 @@ namespace BotHandlers
     {
         private SyndicationItem _lastEn, _lastRu;
         private readonly string _subPath;
-        private Timer _rssUpdater;
+        private readonly Timer _rssUpdater;
 
         public event EventHandler<RssUpdatedEventArgs> RssUpdated;
 

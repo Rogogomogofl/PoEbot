@@ -12,6 +12,7 @@ using BotHandlers.APIs;
 using BotHandlers.Methods;
 using BotHandlers.Models;
 using BotHandlers.Static;
+using BotHandlers.Workers;
 using Flurl.Http;
 using VkBot.Models;
 using VkNet;

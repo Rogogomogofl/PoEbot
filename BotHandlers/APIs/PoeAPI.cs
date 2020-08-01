@@ -33,20 +33,20 @@ namespace BotHandlers.APIs
         {
             _itemsData = new Dictionary<string, string[]>();
             DefaultLeague = "Standard";
-            updateTimer.Elapsed += OnTimedEvent;
+            updateTimer.Elapsed += OnTimedEventAsync;
             updateTimer.AutoReset = true;
             updateTimer.Enabled = true;
-            LoadItemsdataAsync();
+            LoadItemsdataAsync().Wait();
         }
 
-        private void OnTimedEvent(object sender, ElapsedEventArgs e)
+        private async void OnTimedEventAsync(object sender, ElapsedEventArgs e)
         {
-            LoadItemsdataAsync();
+            await LoadItemsdataAsync().ConfigureAwait(false);
         }
 
-        private async void LoadItemsdataAsync()
+        private Task LoadItemsdataAsync()
         {
-            await Task.Run(() =>
+            return Task.Run(() =>
             {
                 try
                 {

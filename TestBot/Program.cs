@@ -9,8 +9,8 @@ using System.Timers;
 using System.Xml;
 using BotHandlers.APIs;
 using BotHandlers.Methods;
+using BotHandlers.Mocks;
 using BotHandlers.Static;
-using TestBot.Mocks;
 
 namespace TestBot
 {
@@ -41,7 +41,7 @@ namespace TestBot
 
             while (true)
             {
-                var poebot = new Poebot(api, new MockPhoto(), new MockLanguage(language));
+                var poebot = new Poebot(api, new MockPhoto(true), new MockLanguage(language));
                 var query = Console.ReadLine();
                 if (string.IsNullOrEmpty(query)) continue;
                 var sw = new Stopwatch();
