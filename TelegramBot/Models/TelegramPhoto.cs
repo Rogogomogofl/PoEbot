@@ -103,18 +103,19 @@ namespace TelegramBot.Models
                 return false;
             }
 
-            photoUploader = () =>
+            photoUploader = async () =>
             {
                 try
                 {
                     using var stream = new MemoryStream(bytes);
-                    botClient.SendPhotoAsync(Id, stream).Wait();
+                    await botClient.SendPhotoAsync(Id, stream);
                 }
                 catch (Exception ex)
                 {
                     Logger.Log.Error($"{GetType()} {ex}");
                 }
             };
+
             return true;
         }
     }

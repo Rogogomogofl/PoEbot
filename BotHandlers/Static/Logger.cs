@@ -10,7 +10,7 @@ namespace BotHandlers.Static
 
         public static void InitLogger()
         {
-            GlobalContext.Properties["LogFileName"] = $@"{Directory.GetCurrentDirectory()}/bot/";
+            GlobalContext.Properties["LogFileName"] = $@"{Directory.GetCurrentDirectory()}/bot/Logs/";
             XmlConfigurator.Configure();
         }
     }

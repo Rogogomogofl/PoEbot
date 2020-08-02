@@ -7,8 +7,7 @@ namespace BotHandlers.Mocks
 {
     public class MockPhoto : AbstractPhoto
     {
-        private bool _saveBytes;
-        public bool _havePhoto = false;
+        private readonly bool _saveBytes;
         public MockPhoto(bool saveBytes, string cachePath = null, long id = 0) : base(cachePath, id)
         {
             _saveBytes = saveBytes;
@@ -28,10 +27,8 @@ namespace BotHandlers.Mocks
                 bmp.Save("image.png", ImageFormat.Png);
                 bmp.Dispose();
             }
-            else
-            {
-                _havePhoto = true;
-            }
+
+            Content = new string[1];
 
             return true;
         }
@@ -50,10 +47,8 @@ namespace BotHandlers.Mocks
                 bmp.Save("image.png", ImageFormat.Png);
                 bmp.Dispose();
             }
-            else
-            {
-                _havePhoto = true;
-            }
+
+            Content = new string[1];
 
             return true;
         }
@@ -70,11 +65,7 @@ namespace BotHandlers.Mocks
 
         public override string[] GetContent()
         {
-            if (_havePhoto)
-            {
-                return new string[1];
-            }
-            return null;
+            return Content;
         }
     }
 }

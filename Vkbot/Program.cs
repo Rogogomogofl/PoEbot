@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using BotHandlers;
 using BotHandlers.Abstracts;
 using BotHandlers.APIs;
 using BotHandlers.Methods;
@@ -85,12 +84,12 @@ namespace VkBot
                     }
                     catch (LongPollKeyExpiredException)
                     {
-                        serverResponse = Vkapi.Groups.GetLongPollServer(178558335);
+                        serverResponse = Vkapi.Groups.GetLongPollServer(ulong.Parse(File.ReadAllText("bot/vkgroup.txt")));
                         ts = serverResponse.Ts;
                     }
                     catch (Exception ex)
                     {
-                        Logger.Log.Error($"{GetType()} {ex}");
+                        Logger.Log.Error($"Program {ex}");
                     }
                 }
             }
@@ -156,8 +155,10 @@ namespace VkBot
 
                 if (!request.Contains("/help"))
                 {
-                    Logger.Log.Info(
-                        $"Запрос: {request}\n\nОтвет:\n{message.Text ?? ""}\nВремя ответа: {sw.ElapsedMilliseconds}");
+                    Logger.Log.Info($"Запрос: {request}" +
+                                    "\n\nОтвет:" +
+                                    $"\n{message.Text ?? ""}" +
+                                    $"\nВремя ответа: {sw.ElapsedMilliseconds}");
                 }
             });
         }
@@ -189,11 +190,11 @@ namespace VkBot
                             AccessToken = File.ReadAllText("bot/vktoken.txt")
                         });
                     }
-                    return Vkapi.Groups.GetLongPollServer(178558335);
+                    return Vkapi.Groups.GetLongPollServer(ulong.Parse(File.ReadAllText("bot/vkgroup.txt")));
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log.Error($"{GetType()} {ex}");
+                    Logger.Log.Error($"Program {ex}");
                     Thread.Sleep(10000);
                 }
             }
@@ -206,11 +207,6 @@ namespace VkBot
                 PeerId = e.Id,
                 Message = e.Message
             });
-        }
-
-        public new static Type GetType()
-        {
-            return typeof(Program);
         }
     }
 }

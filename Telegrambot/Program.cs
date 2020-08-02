@@ -4,14 +4,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using BotHandlers;
 using BotHandlers.Abstracts;
 using BotHandlers.APIs;
 using BotHandlers.Methods;
 using BotHandlers.Models;
 using BotHandlers.Static;
 using BotHandlers.Workers;
-using MihaZupan;
 using Telegram.Bot;
 using Telegram.Bot.Args;
 using TelegramBot.Models;
@@ -44,17 +42,13 @@ namespace TelegramBot
             _rssSubscriber = new RssSubscriber(SubPath);
             _rssSubscriber.RssUpdated += RssUpdated;
 
-            var proxy = new HttpToSocks5Proxy("103.111.183.18", 1080)
-            {
-                ResolveHostnamesLocally = true
-            };
-            _telegramBot = new TelegramBotClient(File.ReadAllText("bot/telegramtoken.txt"), proxy);
-            //var result = telegramBot.GetMeAsync().Result;
+            _telegramBot = new TelegramBotClient(File.ReadAllText("bot/telegramtoken.txt"));
             _telegramBot.OnMessage += TelegramBot_OnMessage;
             _telegramBot.StartReceiving();
+
             Console.WriteLine("Working");
             Logger.Log.Info("Working");
-            while (true) ;
+            while (_telegramBot.IsReceiving) ;
         }
 
         private static async void TelegramBot_OnMessage(object sender, MessageEventArgs e)
@@ -63,14 +57,15 @@ namespace TelegramBot
             {
                 if (e.Message.Text == null) return;
                 if (e.Message.Date.AddMinutes(2) < DateTime.Now.ToUniversalTime()) return;
+
                 var sobaka = e.Message.Text.Split('@');
                 if (sobaka.Length > 1)
                 {
-                    if (sobaka[1] == "poeinfobot") e.Message.Text = sobaka[0];
+                    if (sobaka[1] == _telegramBot.GetMeAsync().Result.Username) e.Message.Text = sobaka[0];
                     else return;
                 }
 
-                var poebot = new Poebot(Api, 
+                var poebot = new Poebot(Api,
                     new TelegramPhoto(CachePath, e.Message.Chat.Id, _telegramBot),
                     new ChatLanguage(LangPath, e.Message.Chat.Id, _langsDictionary));
                 var sw = new Stopwatch();
@@ -81,7 +76,10 @@ namespace TelegramBot
                 var message = poebot.ProcessRequest(request);
                 if (message == null) return;
                 if (message.Text != null)
+                {
                     _telegramBot.SendTextMessageAsync(e.Message.Chat.Id, message.Text);
+                }
+
                 var content = message.Photo?.GetContent();
                 if (content != null)
                 {
@@ -90,7 +88,12 @@ namespace TelegramBot
 
                 sw.Stop();
                 if (!(request.Contains("/help") || request.Contains("/start")))
-                    Logger.Log.Info($"Запрос: {request}\n\nОтвет:\n{message.Text ?? ""}\nВремя ответа: {sw.ElapsedMilliseconds}");
+                {
+                    Logger.Log.Info($"Запрос: {request}" +
+                                    "\n\nОтвет:" +
+                                    $"\n{message.Text ?? ""}" +
+                                    $"\nВремя ответа: {sw.ElapsedMilliseconds}");
+                }
             });
         }
 

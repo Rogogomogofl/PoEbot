@@ -18,6 +18,7 @@ namespace BotHandlers.APIs
     public class PoeApi : AbstractApi<KeyValuePair<string, string[]>>
     {
         public float ExaltedPrice { get; set; }
+
         public override IEnumerable<string> TradeCategories
         {
             get
@@ -364,33 +365,31 @@ namespace BotHandlers.APIs
                     }
                 }
 
-                if (prices.Count > 0)
+                if (prices.Count == 0) return null;
+                
+                var min = prices[0];
+                var median = prices[prices.Count / 2];
+                var mean = prices.Sum() / prices.Count;
+
+                var tradeLink = string.Empty;
+                try
                 {
-                    var min = prices[0];
-                    var median = prices[prices.Count / 2];
-                    var mean = prices.Sum() / prices.Count;
-
-                    var tradeLink = string.Empty;
-                    try
-                    {
-                        var redirectSource = "https://www.pathofexile.com/api/trade/search/" +
-                                        league +
-                                        "?redirect&source=" +
-                                        JsonConvert.SerializeObject(requestJson);
-                        var myHttpWebRequest = (HttpWebRequest)WebRequest.Create(redirectSource);
-                        var myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
-                        tradeLink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Log.Error($"{GetType()} {ex}");
-                    }
-
-                    var priceData = new PriceData(min, median, mean, mean / ExaltedPrice, tradeLink);
-                    return priceData;
+                    var redirectSource = "https://www.pathofexile.com/api/trade/search/" +
+                                         league +
+                                         "?redirect&source=" +
+                                         JsonConvert.SerializeObject(requestJson);
+                    var myHttpWebRequest = (HttpWebRequest)WebRequest.Create(redirectSource);
+                    var myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
+                    tradeLink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log.Error($"{GetType()} {ex}");
                 }
 
-                return null;
+                var priceData = new PriceData(min, median, mean, mean / ExaltedPrice, tradeLink);
+                return priceData;
+
             }
             catch (Exception ex)
             {

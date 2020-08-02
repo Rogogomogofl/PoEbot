@@ -2,15 +2,14 @@
 {
     public abstract class AbstractPhoto
     {
-        public readonly string CachePath;
-        public readonly long Id;
+        protected readonly string CachePath;
+        protected readonly long Id;
         protected string[] Content;
 
         protected AbstractPhoto(string cachePath, long id)
         {
             CachePath = cachePath;
             Id = id;
-            Content = null;
         }
 
         public abstract bool SavePhoto(string name, byte[] bytes);

@@ -50,7 +50,7 @@ namespace BotHandlers.Methods
                 return BotCommand(command, param);
             }
 
-            if (Regex.IsMatch(request, @"www.reddit.com/r/\S+"))
+            if (Regex.IsMatch(request, @"www[.]reddit[.]com/r/\S+"))
             {
                 return SendRedditImage(request);
             }
