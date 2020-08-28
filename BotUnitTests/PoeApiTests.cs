@@ -12,8 +12,8 @@ namespace BotUnitTests
     [TestClass]
     public class PoeApiTests
     {
-        private readonly PoeApi api;
-        private readonly Dictionary<long, ResponseLanguage> language = new Dictionary<long, ResponseLanguage>
+        private readonly PoeApi _api;
+        private readonly Dictionary<long, ResponseLanguage> _languages = new Dictionary<long, ResponseLanguage>
         {
             { 0, ResponseLanguage.Russain }
         };
@@ -25,13 +25,13 @@ namespace BotUnitTests
 
             Logger.InitLogger();
 
-            api = new PoeApi();
+            _api = new PoeApi();
         }
 
         [TestMethod]
         public void WikiSearchTest()
         {
-            var poebot = new Poebot(api, new MockPhoto(false), new MockLanguage(language));
+            var poebot = new Poebot(_api, new MockPhoto(false), new MockLanguage(_languages));
 
             var message = poebot.ProcessRequest("/w test");
             Assert.AreEqual("https://pathofexile.gamepedia.com/Testudo", message?.Text);
@@ -43,7 +43,7 @@ namespace BotUnitTests
         [TestMethod]
         public void PriceTest()
         {
-            var poebot = new Poebot(api, new MockPhoto(false), new MockLanguage(language));
+            var poebot = new Poebot(_api, new MockPhoto(false), new MockLanguage(_languages));
 
             var message = poebot.ProcessRequest("/p exal orb");
             var regex = new Regex(@"Минимальная: \d{2,}c");
@@ -63,7 +63,7 @@ namespace BotUnitTests
         [TestMethod]
         public void CharacterTest()
         {
-            var poebot = new Poebot(api, new MockPhoto(false), new MockLanguage(language));
+            var poebot = new Poebot(_api, new MockPhoto(false), new MockLanguage(_languages));
 
             var message = poebot.ProcessRequest("/c Рогогомогофл");
             Assert.AreEqual("http://poe-profile.info/profile/Rogogomogofl/Рогогомогофл", message?.Text);
@@ -72,7 +72,7 @@ namespace BotUnitTests
         [TestMethod]
         public void CharacterListTest()
         {
-            var poebot = new Poebot(api, new MockPhoto(false), new MockLanguage(language));
+            var poebot = new Poebot(_api, new MockPhoto(false), new MockLanguage(_languages));
 
             var message = poebot.ProcessRequest("/cl rogogomogofl");
             var regex = new Regex(@"\S+\s[(]лига: .+");
@@ -83,7 +83,7 @@ namespace BotUnitTests
         [TestMethod]
         public void PoeNinjaBuildsTest()
         {
-            var poebot = new Poebot(api, new MockPhoto(false), new MockLanguage(language));
+            var poebot = new Poebot(_api, new MockPhoto(false), new MockLanguage(_languages));
 
             var message = poebot.ProcessRequest("/b cyclon + starf");
             Assert.AreEqual("Билды которые используют Starforge + Cyclone:\nhttps://poe.ninja/challenge/builds?item=Starforge&skill=Cyclone", message?.Text);
@@ -92,7 +92,7 @@ namespace BotUnitTests
         [TestMethod]
         public void WikiScreenshotTest()
         {
-            var poebot = new Poebot(api, new MockPhoto(false), new MockLanguage(language));
+            var poebot = new Poebot(_api, new MockPhoto(false), new MockLanguage(_languages));
 
             var message = poebot.ProcessRequest("/i test");
             Assert.AreEqual(true, message?.Photo?.GetContent()?.Length == 1);
@@ -104,7 +104,7 @@ namespace BotUnitTests
         [TestMethod]
         public void HelpMeTest()
         {
-            var poebot = new Poebot(api, new MockPhoto(false), new MockLanguage(language));
+            var poebot = new Poebot(_api, new MockPhoto(false), new MockLanguage(_languages));
 
             var message = poebot.ProcessRequest("/hm star");
             Assert.AreNotEqual(null, message);

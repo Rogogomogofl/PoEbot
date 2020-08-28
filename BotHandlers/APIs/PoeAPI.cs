@@ -17,7 +17,7 @@ namespace BotHandlers.APIs
 {
     public class PoeApi : AbstractApi<KeyValuePair<string, string[]>>
     {
-        public float ExaltedPrice { get; set; }
+        public float ExaltedPrice { get; private set; }
 
         public override IEnumerable<string> TradeCategories
         {
@@ -34,10 +34,11 @@ namespace BotHandlers.APIs
         {
             _itemsData = new Dictionary<string, string[]>();
             DefaultLeague = "Standard";
+            LoadItemsdataAsync().Wait();
+            
             updateTimer.Elapsed += OnTimedEventAsync;
             updateTimer.AutoReset = true;
             updateTimer.Enabled = true;
-            LoadItemsdataAsync().Wait();
         }
 
         private async void OnTimedEventAsync(object sender, ElapsedEventArgs e)
@@ -147,13 +148,12 @@ namespace BotHandlers.APIs
 
         public override (string Name, string Caregory) ItemSearch(string search)
         {
-            var request = search.ToLower();
-            var regex = new Regex($@"^{request.Replace(" ", @"\D*")}\D*");
+            var regex = new Regex($@"^{search.Replace(" ", @"\D*")}\D*", RegexOptions.IgnoreCase);
             lock (itemsDataLocker)
             {
                 foreach (var itemsDataByCategory in _itemsData)
                 {
-                    var item = itemsDataByCategory.Value.FirstOrDefault(o => regex.IsMatch(o.ToLower()));
+                    var item = itemsDataByCategory.Value.FirstOrDefault(o => regex.IsMatch(o));
                     if (item != null)
                     {
                         return (item, itemsDataByCategory.Key);
@@ -161,12 +161,12 @@ namespace BotHandlers.APIs
                 }
             }
 
-            regex = new Regex($@"{request.Replace(" ", @"\D*")}\D*");
+            regex = new Regex($@"{search.Replace(" ", @"\D*")}\D*", RegexOptions.IgnoreCase);
             lock (itemsDataLocker)
             {
                 foreach (var itemsDataByCategory in _itemsData)
                 {
-                    var item = itemsDataByCategory.Value.FirstOrDefault(o => regex.IsMatch(o.ToLower()));
+                    var item = itemsDataByCategory.Value.FirstOrDefault(o => regex.IsMatch(o));
                     if (item != null)
                     {
                         return (item, itemsDataByCategory.Key);
@@ -179,12 +179,12 @@ namespace BotHandlers.APIs
 
         public override string[] ItemsSearch(string search)
         {
-            var pattern = search.ToLower().Replace("the ", @"the\s").Replace(" ", @"\D*\s\D*");
-            var regex = new Regex($@"{pattern}\D*");
+            var pattern = search.Replace("the ", @"the\s").Replace(" ", @"\D*\s\D*");
+            var regex = new Regex($@"{pattern}\D*", RegexOptions.IgnoreCase);
             lock (itemsDataLocker)
             {
                 return _itemsData.SelectMany(x => x.Value)
-                    .Where(i => regex.IsMatch(i.ToLower())).ToArray();
+                    .Where(i => regex.IsMatch(i)).ToArray();
             }
         }
 

@@ -56,12 +56,12 @@ namespace TelegramBot.Models
 
         public override bool LoadPhotoFromFile(string name)
         {
-            var item = name.ToLower().Replace(' ', '-').Replace("'", "");
+            var item = name.Replace(' ', '-').Replace("'", "");
             var lines = File.ReadAllLines(CachePath);
             foreach (var line in lines)
             {
                 var data = line.Split(' ');
-                if (data[0] == item)
+                if (data[0].Equals(item, StringComparison.OrdinalIgnoreCase))
                 {
                     Content = new[] {data[1]};
                     return true;

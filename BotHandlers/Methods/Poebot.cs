@@ -108,36 +108,35 @@ namespace BotHandlers.Methods
                 return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
 
-            srch = srch.ToLower();
-
-            var match = Regex.Match(srch, @"( [56]l)").ToString();
-            var links = Regex.Match(match, @"\d").ToString();
+            var match = Regex.Match(srch, @"( [56]l)", RegexOptions.IgnoreCase).ToString();
+            var links = Regex.Match(match, @"\d", RegexOptions.IgnoreCase).ToString();
             if (!string.IsNullOrWhiteSpace(match))
             {
                 srch = srch.Replace(match, "");
             }
 
             string league;
-            if (srch.Contains("|"))
+            var split = srch.Split('|').Select(s => s.Trim(' ')).ToArray();
+            if (split.Length > 1)
             {
                 var leagues = api.GetLeagues();
                 if (leagues == null)
                     return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
 
-                var ln = srch.Split('|').Last().Trim(' ');
+                var ln = split.Last();
                 if (string.IsNullOrEmpty(ln))
                     return new Message(
                         ResponseDictionary.IncorrectLeagueKey(chatLanguage.Language, string.Join("\n", leagues)));
-                srch = srch.Substring(0, srch.IndexOf('|') - 1);
-                var lreg = new Regex($@"^{ln.Replace(" ", @"\S*\s?")}\S*");
-                league = leagues.FirstOrDefault(l => lreg.IsMatch(l.ToLower()));
+                srch = split.First();
+                var lreg = new Regex($@"^{ln.Replace(" ", @"\S*\s?")}\S*", RegexOptions.IgnoreCase);
+                league = leagues.FirstOrDefault(l => lreg.IsMatch(l));
             }
             else
             {
                 league = api.DefaultLeague;
             }
 
-            var item = ItemSearch(srch.Trim(' '));
+            var item = ItemSearch(srch);
             if (string.IsNullOrEmpty(item.Name))
             {
                 return new Message(item.Url);
@@ -153,10 +152,7 @@ namespace BotHandlers.Methods
             if (priceData.PriceHistory.Any())
             {
                 var series = new LineSeries();
-                foreach (var ele in priceData.PriceHistory)
-                {
-                    series.Points.Add(new DataPoint(DateTimeAxis.ToDouble(ele.Key), ele.Value));
-                }
+                series.Points.AddRange(priceData.PriceHistory.Select(ele => new DataPoint(DateTimeAxis.ToDouble(ele.Key), ele.Value)));
 
                 var plot = new PlotModel();
                 plot.Axes.Add(new DateTimeAxis
@@ -342,7 +338,6 @@ namespace BotHandlers.Methods
 
         private (string Name, string Url) ItemSearch(string search)
         {
-            search = search.ToLower();
             string name, url;
             JArray result;
             try
@@ -477,7 +472,7 @@ namespace BotHandlers.Methods
 
         private Message LabLayout(string search)
         {
-            var regex = new Regex(@"^" + search.ToLower() + @"\S*");
+            var regex = new Regex(@"^" + search + @"\S*", RegexOptions.IgnoreCase);
             if (!int.TryParse(search, out var labNum))
             {
                 for (int i = 0; i < 4; i++)
@@ -522,7 +517,7 @@ namespace BotHandlers.Methods
 
         private Message LeagueHint(string request)
         {
-            var hint = hints.FirstOrDefault(o => Regex.IsMatch(o, $@"^{request.ToLower()}"));
+            var hint = hints.FirstOrDefault(o => Regex.IsMatch(o, $@"^{request}", RegexOptions.IgnoreCase));
             if (!photo.GetPresetPhoto(hint))
             {
                 return new Message(ResponseDictionary.IncorrectHintKey(chatLanguage.Language, request, hints));
@@ -588,7 +583,7 @@ namespace BotHandlers.Methods
                 return new Message(ResponseDictionary.CharacterNotFound(chatLanguage.Language));
 
             var characters = api.GetCharactersList(account);
-            charName = characters.FirstOrDefault(c => c.Name.ToLower() == charName.ToLower()).Name;
+            charName = characters.FirstOrDefault(c => c.Name.Equals(charName, StringComparison.OrdinalIgnoreCase)).Name;
             return new Message("http://poe-profile.info/profile/" + $"{account}/{charName}");
         }
 
@@ -596,7 +591,7 @@ namespace BotHandlers.Methods
         {
             var characters = api.GetCharactersList(account);
             return characters == null ?
-                new Message(ResponseDictionary.ProfileNotFound(chatLanguage.Language)) : 
+                new Message(ResponseDictionary.ProfileNotFound(chatLanguage.Language)) :
                 new Message(ResponseDictionary.CharListResponce(chatLanguage.Language, account, characters));
         }
 
