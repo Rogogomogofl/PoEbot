@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using System.Xml;
 using BotHandlers.APIs;
+using BotHandlers.Logger;
 using BotHandlers.Methods;
 using BotHandlers.Mocks;
 using BotHandlers.Static;
@@ -23,7 +24,7 @@ namespace TestBot
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-            Logger.InitLogger();
+            Common.Logger = new ConsoleLogger();
 
             _rssUpdate = new Timer(10 * 1000);
             _rssUpdate.Elapsed += UpdateRss;

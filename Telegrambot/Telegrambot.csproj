@@ -37,9 +37,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=2.0.9.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.9\lib\net45\log4net.dll</HintPath>
-    </Reference>
     <Reference Include="MihaZupan.HttpToSocks5Proxy, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\HttpToSocks5Proxy.1.4.0\lib\net45\MihaZupan.HttpToSocks5Proxy.dll</HintPath>
     </Reference>
@@ -62,6 +59,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Models\TelegramPhoto.cs" />
+    <Compile Include="Workers\TelegramBotWorker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

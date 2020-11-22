@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using BotHandlers.APIs;
+using BotHandlers.Logger;
 using BotHandlers.Methods;
 using BotHandlers.Mocks;
 using BotHandlers.Static;
@@ -23,7 +24,7 @@ namespace BotUnitTests
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-            Logger.InitLogger();
+            Common.Logger = new ConsoleLogger();
 
             api = new PoeApi();
         }

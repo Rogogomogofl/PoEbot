@@ -121,12 +121,17 @@ namespace BotHandlers.Methods
             {
                 var leagues = api.GetLeagues();
                 if (leagues == null)
+                {
                     return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
+                }
 
                 var ln = split.Last();
                 if (string.IsNullOrEmpty(ln))
+                {
                     return new Message(
                         ResponseDictionary.IncorrectLeagueKey(chatLanguage.Language, string.Join("\n", leagues)));
+                }
+
                 srch = split.First();
                 var lreg = new Regex($@"^{ln.Replace(" ", @"\S*\s?")}\S*", RegexOptions.IgnoreCase);
                 league = leagues.FirstOrDefault(l => lreg.IsMatch(l));
@@ -201,9 +206,13 @@ namespace BotHandlers.Methods
 
             var items = api.ItemsSearch(req);
             if (items.Length > 30)
+            {
                 return new Message(ResponseDictionary.ToManyResults(chatLanguage.Language));
+            }
             if (!items.Any())
+            {
                 return new Message(ResponseDictionary.NoResults(chatLanguage.Language, req));
+            }
             return new Message(ResponseDictionary.PossibleVariants(chatLanguage.Language, items));
         }
 
@@ -279,7 +288,9 @@ namespace BotHandlers.Methods
                     case "Gems":
                         {
                             if (name.Contains("Support"))
+                            {
                                 return new Message(ResponseDictionary.SupportsNotSupported(chatLanguage.Language));
+                            }
                             skills.Add(name);
                             break;
                         }
@@ -296,7 +307,7 @@ namespace BotHandlers.Methods
             }
 
             string fstRetStr = ResponseDictionary.BuildsThatUse(chatLanguage.Language),
-                sndRetStr = ":\nhttps://poe.ninja/challenge/builds?";
+                   sndRetStr = ":\nhttps://poe.ninja/challenge/builds?";
             if (uniques.Count > 0)
             {
                 sndRetStr += "item=";
@@ -346,14 +357,14 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{GetType()} {ex}");
+                Common.Logger.LogError(ex);
                 return ("", ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
 
             if (result[3].Any())
             {
-                url = result[3][0].ToString();
-                name = result[1][0].ToString();
+                url = result[3][0].Value<string>();
+                name = result[1][0].Value<string>();
             }
             else
             {
@@ -366,8 +377,7 @@ namespace BotHandlers.Methods
                 if (item.Name != null)
                 {
                     name = item.Name;
-                    url = "https://pathofexile.gamepedia.com/" +
-                          $"{name.Replace(' ', '_')}";
+                    url = "https://pathofexile.gamepedia.com/" + name.Replace(' ', '_');
                 }
                 else return ("", ResponseDictionary.NoResults(chatLanguage.Language, search));
             }
@@ -383,6 +393,7 @@ namespace BotHandlers.Methods
             if (string.IsNullOrEmpty(name)) return new Message(url);
 
             if (photo.LoadPhotoFromFile(name)) return new Message(photo);
+
             var options = new ChromeOptions();
             options.AddArgument("enable-automation");
             options.AddArgument("headless");
@@ -463,7 +474,7 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{GetType()} {ex}");
+                Common.Logger.LogError(ex);
                 return new Message(ResponseDictionary.ImageFailed(chatLanguage.Language, name));
             }
 
@@ -475,7 +486,7 @@ namespace BotHandlers.Methods
             var regex = new Regex(@"^" + search + @"\S*", RegexOptions.IgnoreCase);
             if (!int.TryParse(search, out var labNum))
             {
-                for (int i = 0; i < 4; i++)
+                for (var i = 0; i < 4; i++)
                 {
                     if (regex.IsMatch(labLayouts[i]))
                     {
@@ -510,7 +521,7 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{GetType()} {ex}");
+                Common.Logger.LogError(ex);
                 return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
         }
@@ -580,7 +591,9 @@ namespace BotHandlers.Methods
         {
             var account = api.GetAccountName(charName);
             if (account == null)
+            {
                 return new Message(ResponseDictionary.CharacterNotFound(chatLanguage.Language));
+            }
 
             var characters = api.GetCharactersList(account);
             charName = characters.FirstOrDefault(c => c.Name.Equals(charName, StringComparison.OrdinalIgnoreCase)).Name;
@@ -607,7 +620,7 @@ namespace BotHandlers.Methods
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log.Error($"{GetType()} {ex}");
+                    Common.Logger.LogError(ex);
                     return new Message(ResponseDictionary.SubscriptionFailed(chatLanguage.Language));
                 }
 
@@ -616,7 +629,7 @@ namespace BotHandlers.Methods
                 {
                     using (var sw = new StreamWriter(parameters[2], true, Encoding.Default))
                     {
-                        sw.WriteLine("{0} {1}", parameters[1], parameters[0]);
+                        sw.WriteLine($"{parameters[1]} {parameters[0]}");
                     }
 
                     return new Message(ResponseDictionary.RssSubscription(chatLanguage.Language, parameters[0]));
@@ -635,7 +648,7 @@ namespace BotHandlers.Methods
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log.Error($"{GetType()} {ex}");
+                    Common.Logger.LogError(ex);
                     return new Message(ResponseDictionary.SubscriptionFailed(chatLanguage.Language));
                 }
             }
@@ -652,7 +665,7 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{GetType()} {ex}");
+                Common.Logger.LogError(ex);
                 return new Message(ResponseDictionary.IncorrectLanguage(chatLanguage.Language));
             }
 
@@ -682,7 +695,7 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{GetType()} {ex}");
+                Common.Logger.LogError(ex);
                 return null;
             }
         }
@@ -712,7 +725,7 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{GetType()} {ex}");
+                Common.Logger.LogError(ex);
                 return null;
             }
         }

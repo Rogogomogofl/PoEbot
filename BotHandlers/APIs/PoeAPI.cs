@@ -35,7 +35,7 @@ namespace BotHandlers.APIs
             _itemsData = new Dictionary<string, string[]>();
             DefaultLeague = "Standard";
             LoadItemsdataAsync().Wait();
-            
+
             updateTimer.Elapsed += OnTimedEventAsync;
             updateTimer.AutoReset = true;
             updateTimer.Enabled = true;
@@ -61,7 +61,7 @@ namespace BotHandlers.APIs
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log.Error($"{GetType()} {ex}");
+                    Common.Logger.LogError(ex);
                 }
 
                 try
@@ -70,7 +70,8 @@ namespace BotHandlers.APIs
                     var categories = itemsJObject["result"].Value<JArray>();
                     lock (itemsDataLocker)
                     {
-                        (_itemsData as Dictionary<string, string[]>).Clear();
+                        var _itemsDataDictionary = _itemsData as Dictionary<string, string[]>;
+                        _itemsDataDictionary.Clear();
                         foreach (var category in categories)
                         {
                             var label = category["label"].Value<string>();
@@ -80,7 +81,7 @@ namespace BotHandlers.APIs
                             items.AddRange(entries.Select(entry =>
                                 entry["name"] == null ? entry["type"].Value<string>() : entry["name"].Value<string>()));
 
-                            (_itemsData as Dictionary<string, string[]>).Add(label, items.ToArray());
+                            _itemsDataDictionary.Add(label, items.ToArray());
                         }
                     }
 
@@ -114,7 +115,7 @@ namespace BotHandlers.APIs
                         }
                     };
                     var fetchedTrade = FetchTrade(requestJson, DefaultLeague);
-                    List<float> prices = new List<float>();
+                    var prices = new List<float>();
                     foreach (var token in fetchedTrade)
                     {
                         var listing = token["listing"].Value<JObject>();
@@ -133,12 +134,12 @@ namespace BotHandlers.APIs
                         ExaltedPrice = prices.Sum() / prices.Count;
                     }
 
-                    Logger.Log.Info($"Data loaded for {GetType()}");
+                    Common.Logger.LogInfo($"Data loaded for {GetType()}");
                     updateTimer.Interval = 3600 * 1000;
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log.Error($"{GetType()} {ex}");
+                    Common.Logger.LogError(ex);
                     updateTimer.Interval = 60 * 1000;
                 }
             });
@@ -345,7 +346,7 @@ namespace BotHandlers.APIs
             try
             {
                 var result = FetchTrade(requestJson, league);
-                List<float> prices = new List<float>();
+                var prices = new List<float>();
                 foreach (var token in result)
                 {
                     var listing = token["listing"].Value<JObject>();
@@ -366,7 +367,7 @@ namespace BotHandlers.APIs
                 }
 
                 if (prices.Count == 0) return null;
-                
+
                 var min = prices[0];
                 var median = prices[prices.Count / 2];
                 var mean = prices.Sum() / prices.Count;
@@ -384,7 +385,7 @@ namespace BotHandlers.APIs
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log.Error($"{GetType()} {ex}");
+                    Common.Logger.LogError(ex);
                 }
 
                 var priceData = new PriceData(min, median, mean, mean / ExaltedPrice, tradeLink);
@@ -393,7 +394,7 @@ namespace BotHandlers.APIs
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{GetType()} {ex}");
+                Common.Logger.LogError(ex);
                 return null;
             }
         }
@@ -470,7 +471,7 @@ namespace BotHandlers.APIs
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{GetType()} {ex}");
+                Common.Logger.LogError(ex);
                 return null;
             }
         }

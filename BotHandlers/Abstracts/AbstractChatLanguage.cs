@@ -9,7 +9,6 @@ namespace BotHandlers.Abstracts
         protected readonly long id;
         protected readonly Dictionary<long, ResponseLanguage> langsDictionary;
 
-        protected ResponseLanguage? language;
         public abstract ResponseLanguage Language { get; set; }
 
         protected AbstractChatLanguage(string langPath, long id, Dictionary<long, ResponseLanguage> langsDictionary)

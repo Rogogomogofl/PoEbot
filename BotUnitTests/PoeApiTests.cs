@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using BotHandlers.APIs;
+using BotHandlers.Logger;
 using BotHandlers.Methods;
 using BotHandlers.Mocks;
 using BotHandlers.Static;
@@ -23,7 +24,7 @@ namespace BotUnitTests
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-            Logger.InitLogger();
+            Common.Logger = new ConsoleLogger();
 
             _api = new PoeApi();
         }
@@ -38,6 +39,9 @@ namespace BotUnitTests
 
             message = poebot.ProcessRequest("/w disf");
             Assert.AreEqual("https://pathofexile.gamepedia.com/Atziri's_Disfavour", message?.Text);
+
+            message = poebot.ProcessRequest("/w отвар рум");
+            Assert.AreEqual("https://pathofexile-ru.gamepedia.com/%D0%9E%D1%82%D0%B2%D0%B0%D1%80_%D0%A0%D1%83%D0%BC%D0%B8", message?.Text);
         }
 
         [TestMethod]

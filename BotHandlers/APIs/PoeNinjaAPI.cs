@@ -41,12 +41,12 @@ namespace BotHandlers.APIs
                 try
                 {
 
-                    Logger.Log.Info($"Data loaded for {GetType()}");
+                    Common.Logger.LogInfo($"Data loaded for {GetType()}");
                     updateTimer.Interval = 3600 * 1000;
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log.Error($"{GetType()} {ex}");
+                    Common.Logger.LogError(ex);
                     updateTimer.Interval = 60 * 1000;
                 }
             });

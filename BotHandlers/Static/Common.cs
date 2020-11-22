@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using BotHandlers.Logger;
 
 namespace BotHandlers.Static
 {
@@ -11,18 +12,20 @@ namespace BotHandlers.Static
             var output = "";
             try
             {
-                var request = (HttpWebRequest) WebRequest.Create(url);
+                var request = (HttpWebRequest)WebRequest.Create(url);
                 request.Proxy = null;
-                using var response = (HttpWebResponse) request.GetResponse();
+                using var response = (HttpWebResponse)request.GetResponse();
                 using var reader = new StreamReader(response.GetResponseStream());
                 output = reader.ReadToEnd();
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{ex} at BotHandlers.Common.GetContent");
+                Logger.LogError(ex);
             }
 
             return output;
         }
+
+        public static ILogger Logger { get; set; }
     }
 }

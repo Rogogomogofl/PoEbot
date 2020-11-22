@@ -8,38 +8,26 @@ using BotHandlers.Static;
 
 namespace BotHandlers.Models
 {
-    public class ChatLanguage : AbstractChatLanguage
+    public class ChatLanguage : AbstractChatLanguage 
     {
         public override ResponseLanguage Language
         {
-            get
-            {
-                language ??= langsDictionary.ContainsKey(id) ? langsDictionary[id] : ResponseLanguage.Russain;
-                return (ResponseLanguage)language;
-            }
-
+            get => langsDictionary.TryGetValue(id, out var lang) ? lang : ResponseLanguage.Russain;
             set
             {
-                language = value;
-
-                if (langsDictionary.ContainsKey(id))
-                {
-                    langsDictionary[id] = value;
-                }
-                else
-                {
-                    langsDictionary.Add(id, value);
-                }
+                langsDictionary[id] = value;
 
                 try
                 {
                     using var sw = new StreamWriter(langPath, false, Encoding.Default);
                     foreach (var lang in langsDictionary)
+                    {
                         sw.WriteLine($"{lang.Key} {ResponseDictionary.EnumToCode(lang.Value)}");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log.Error($"{GetType()} {ex}");
+                    Common.Logger.LogError(ex);
                 }
             }
         }
@@ -48,19 +36,19 @@ namespace BotHandlers.Models
 
         public static Dictionary<long, ResponseLanguage> LoadDictionary(string path)
         {
-            Dictionary<long, ResponseLanguage> dictionary = new Dictionary<long, ResponseLanguage>();
+            var dictionary = new Dictionary<long, ResponseLanguage>();
             try
             {
                 var lines = File.ReadAllLines(path);
                 foreach (var line in lines)
                 {
                     var parameters = line.Split(' ');
-                    dictionary.Add(long.Parse(parameters[0]), ResponseDictionary.CodeToEnum(parameters[1]));
+                    dictionary[long.Parse(parameters[0])] = ResponseDictionary.CodeToEnum(parameters[1]);
                 }
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{ex} at BotHandlers.ChatLanguage.LoadDictionary");
+                Common.Logger.LogError(ex);
             }
 
             return dictionary;

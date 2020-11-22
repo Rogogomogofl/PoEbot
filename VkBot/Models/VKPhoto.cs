@@ -52,7 +52,7 @@ namespace VkBot.Models
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{GetType()} {ex}");
+                Common.Logger.LogError(ex);
                 return false;
             }
         }
@@ -138,7 +138,7 @@ namespace VkBot.Models
             }
             catch (Exception ex)
             {
-                Logger.Log.Error($"{GetType()} {ex}");
+                Common.Logger.LogError(ex);
                 return false;
             }
         }

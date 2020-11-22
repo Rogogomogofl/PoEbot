@@ -392,15 +392,15 @@ namespace BotHandlers.Methods
             switch (language)
             {
                 case ResponseLanguage.Russain:
-                {
-                    charsDiscription = characters.Aggregate(charsDiscription, (current, character) => current + $"\n{character.Name} (лига: {character.League})");
-                    return $"Список доступных для отображения персонажей профиля {account}:\n{charsDiscription}";
-                }
+                    {
+                        charsDiscription = characters.Aggregate(string.Empty, (current, character) => current + $"\n{character.Name} (лига: {character.League})");
+                        return $"Список доступных для отображения персонажей профиля {account}:\n{charsDiscription}";
+                    }
                 case ResponseLanguage.English:
-                {
-                    charsDiscription = characters.Aggregate(charsDiscription, (current, character) => current + $"\n{character.Name} (league: {character.League})");
-                    return $"List of characters available to display in {account} profile:\n{charsDiscription}";
-                }
+                    {
+                        charsDiscription = characters.Aggregate(string.Empty, (current, character) => current + $"\n{character.Name} (league: {character.League})");
+                        return $"List of characters available to display in {account} profile:\n{charsDiscription}";
+                    }
                 default:
                     {
                         throw new Exception("Unrealized language");
