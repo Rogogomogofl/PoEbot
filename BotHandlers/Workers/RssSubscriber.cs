@@ -30,7 +30,7 @@ namespace BotHandlers.Workers
 
         public event EventHandler<RssUpdatedEventArgs> RssUpdated;
 
-        public RssSubscriber(string subPath, double updateInterval = 5 * 60 * 1000)
+        public RssSubscriber(string subPath, double updateInterval)
         {
             _subPath = subPath;
 
@@ -85,7 +85,7 @@ namespace BotHandlers.Workers
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log.Error($"{GetType()} {ex}");
+                    Common.Logger.LogError(ex);
                 }
             });
         }
