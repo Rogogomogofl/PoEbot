@@ -35,13 +35,13 @@ namespace BotUnitTests
             var poebot = new Poebot(_api, new MockPhoto(false), new MockLanguage(_languages));
 
             var message = poebot.ProcessRequest("/w test");
-            Assert.AreEqual("https://pathofexile.gamepedia.com/Testudo", message?.Text);
+            Assert.AreEqual(WebUtility.UrlDecode("https://pathofexile.gamepedia.com/Testudo"), WebUtility.UrlDecode(message?.Text));
 
             message = poebot.ProcessRequest("/w disf");
-            Assert.AreEqual("https://pathofexile.gamepedia.com/Atziri's_Disfavour", message?.Text);
+            Assert.AreEqual(WebUtility.UrlDecode("https://pathofexile.gamepedia.com/Atziri's_Disfavour"), WebUtility.UrlDecode(message?.Text));
 
             message = poebot.ProcessRequest("/w отвар рум");
-            Assert.AreEqual("https://pathofexile-ru.gamepedia.com/%D0%9E%D1%82%D0%B2%D0%B0%D1%80_%D0%A0%D1%83%D0%BC%D0%B8", message?.Text);
+            Assert.AreEqual(WebUtility.UrlDecode("https://pathofexile-ru.gamepedia.com/%D0%9E%D1%82%D0%B2%D0%B0%D1%80_%D0%A0%D1%83%D0%BC%D0%B8"), WebUtility.UrlDecode(message?.Text));
         }
 
         [TestMethod]
@@ -70,7 +70,7 @@ namespace BotUnitTests
             var poebot = new Poebot(_api, new MockPhoto(false), new MockLanguage(_languages));
 
             var message = poebot.ProcessRequest("/c Рогогомогофл");
-            Assert.AreEqual("http://poe-profile.info/profile/Rogogomogofl/Рогогомогофл", message?.Text);
+            Assert.AreEqual(WebUtility.UrlDecode("http://poe-profile.info/profile/Rogogomogofl/Рогогомогофл"), WebUtility.UrlEncode(message?.Text));
         }
 
         [TestMethod]
