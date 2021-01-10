@@ -29,7 +29,7 @@ namespace TelegramBot.Workers
             _telegramBot.StartReceiving();
 
             Console.WriteLine("Working");
-            Common.Logger.LogInfo("Working");
+            Common.Logger?.LogInfo("Working");
             while (_telegramBot.IsReceiving) ;
         }
 
@@ -71,7 +71,7 @@ namespace TelegramBot.Workers
                 sw.Stop();
                 if (!(request.Contains("/help") || request.Contains("/start")))
                 {
-                    Common.Logger.LogInfo($"Запрос: {request}" +
+                    Common.Logger?.LogInfo($"Запрос: {request}" +
                                     "\n\nОтвет:" +
                                     $"\n{message.Text ?? ""}" +
                                     $"\nВремя ответа: {sw.ElapsedMilliseconds}" +

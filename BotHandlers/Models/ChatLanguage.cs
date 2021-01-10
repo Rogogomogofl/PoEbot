@@ -27,7 +27,7 @@ namespace BotHandlers.Models
                 }
                 catch (Exception ex)
                 {
-                    Common.Logger.LogError(ex);
+                    Common.Logger?.LogError(ex);
                 }
             }
         }
@@ -48,7 +48,7 @@ namespace BotHandlers.Models
             }
             catch (Exception ex)
             {
-                Common.Logger.LogError(ex);
+                Common.Logger?.LogError(ex);
             }
 
             return dictionary;

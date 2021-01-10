@@ -89,7 +89,7 @@ namespace TelegramBot.Models
                 }
                 catch (Exception ex)
                 {
-                    Common.Logger.LogError(ex);
+                    Common.Logger?.LogError(ex);
                 }
             };
 
@@ -112,7 +112,7 @@ namespace TelegramBot.Models
                 }
                 catch (Exception ex)
                 {
-                    Common.Logger.LogError(ex);
+                    Common.Logger?.LogError(ex);
                 }
             };
 

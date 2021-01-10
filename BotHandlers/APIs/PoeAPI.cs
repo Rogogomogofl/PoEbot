@@ -17,6 +17,9 @@ namespace BotHandlers.APIs
 {
     public class PoeApi : AbstractApi<KeyValuePair<string, string[]>>
     {
+        private static readonly Timer _requestTimer = new Timer { AutoReset = false, Interval = 500 };
+        private static volatile bool _isRequestEnabled = true;
+
         public float ExaltedPrice { get; private set; }
 
         public override IEnumerable<string> TradeCategories
@@ -28,6 +31,11 @@ namespace BotHandlers.APIs
                     return _itemsData.Select(i => i.Key).ToArray();
                 }
             }
+        }
+
+        static PoeApi()
+        {
+            _requestTimer.Elapsed += (sender, args) => _isRequestEnabled = true;
         }
 
         public PoeApi()
@@ -61,12 +69,12 @@ namespace BotHandlers.APIs
                 }
                 catch (Exception ex)
                 {
-                    Common.Logger.LogError(ex);
+                    Common.Logger?.LogError(ex);
                 }
 
                 try
                 {
-                    var itemsJObject = JObject.Parse(Common.GetContent("https://www.pathofexile.com/api/trade/data/items"));
+                    var itemsJObject = JObject.Parse(PoeAPIRequest("https://www.pathofexile.com/api/trade/data/items"));
                     var categories = itemsJObject["result"].Value<JArray>();
                     lock (itemsDataLocker)
                     {
@@ -81,67 +89,85 @@ namespace BotHandlers.APIs
                             items.AddRange(entries.Select(entry =>
                                 entry["name"] == null ? entry["type"].Value<string>() : entry["name"].Value<string>()));
 
-                            _itemsDataDictionary.Add(label, items.ToArray());
-                        }
-                    }
-
-                    var requestJson = new
-                    {
-                        query = new
-                        {
-                            status = new
+                            if (_itemsDataDictionary.ContainsKey(label))
                             {
-                                option = "online"
-                            },
-                            filters = new
-                            {
-                                trade_filters = new
-                                {
-                                    disabled = false,
-                                    filters = new
-                                    {
-                                        sale_type = new
-                                        {
-                                            option = "priced"
-                                        }
-                                    }
-                                }
-                            },
-                            type = "Exalted Orb"
-                        },
-                        sort = new
-                        {
-                            price = "asc"
-                        }
-                    };
-                    var fetchedTrade = FetchTrade(requestJson, DefaultLeague);
-                    var prices = new List<float>();
-                    foreach (var token in fetchedTrade)
-                    {
-                        var listing = token["listing"].Value<JObject>();
-                        var price = listing["price"].Value<JObject>();
-                        switch (price["currency"].Value<string>())
-                        {
-                            case "chaos":
-                                {
-                                    prices.Add(price["amount"].Value<float>());
-                                    break;
-                                }
-                        }
-                    }
-                    if (prices.Count > 0)
-                    {
-                        ExaltedPrice = prices.Sum() / prices.Count;
-                    }
+                                items.AddRange(_itemsDataDictionary[label]);
+                            }
 
-                    Common.Logger.LogInfo($"Data loaded for {GetType()}");
-                    updateTimer.Interval = 3600 * 1000;
+                            _itemsDataDictionary[label] = items.ToArray();
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Common.Logger.LogError(ex);
+                    Common.Logger?.LogError(ex);
                     updateTimer.Interval = 60 * 1000;
+                    return;
                 }
+
+                var requestJson = new
+                {
+                    query = new
+                    {
+                        status = new
+                        {
+                            option = "online"
+                        },
+                        filters = new
+                        {
+                            trade_filters = new
+                            {
+                                disabled = false,
+                                filters = new
+                                {
+                                    sale_type = new
+                                    {
+                                        option = "priced"
+                                    },
+                                    price = new
+                                    {
+                                        option = "chaos",
+                                        min = 1,
+                                        max = 9999
+                                    }
+                                }
+                            }
+                        },
+                        type = "Exalted Orb"
+                    },
+                    sort = new
+                    {
+                        price = "asc"
+                    }
+                };
+                var result = TryFetchTrade(requestJson, DefaultLeague, out var fetchedTrade, out var id);
+                if (!result)
+                {
+                    updateTimer.Interval = 60 * 1000;
+                    return;
+                }
+
+                var prices = new List<float>();
+                foreach (var token in fetchedTrade)
+                {
+                    var listing = token["listing"].Value<JObject>();
+                    var price = listing["price"].Value<JObject>();
+                    switch (price["currency"].Value<string>())
+                    {
+                        case "chaos":
+                            {
+                                prices.Add(price["amount"].Value<float>());
+                                break;
+                            }
+                    }
+                }
+                if (prices.Count > 0)
+                {
+                    ExaltedPrice = prices.Sum() / prices.Count;
+                }
+
+                Common.Logger?.LogInfo($"Data loaded for {GetType()}");
+                updateTimer.Interval = 3600 * 1000;
             });
         }
 
@@ -343,60 +369,38 @@ namespace BotHandlers.APIs
                     }
             }
 
-            try
+            var result = TryFetchTrade(requestJson, league, out var trades, out var id);
+            if (!result) return null;
+
+            var prices = new List<float>();
+            foreach (var token in trades)
             {
-                var result = FetchTrade(requestJson, league);
-                var prices = new List<float>();
-                foreach (var token in result)
+                var listing = token["listing"].Value<JObject>();
+                var price = listing["price"].Value<JObject>();
+                switch (price["currency"].Value<string>())
                 {
-                    var listing = token["listing"].Value<JObject>();
-                    var price = listing["price"].Value<JObject>();
-                    switch (price["currency"].Value<string>())
+                    case "chaos":
                     {
-                        case "chaos":
-                            {
-                                prices.Add(price["amount"].Value<float>());
-                                break;
-                            }
-                        case "exalted":
-                            {
-                                prices.Add(price["amount"].Value<float>() * ExaltedPrice);
-                                break;
-                            }
+                        prices.Add(price["amount"].Value<float>());
+                        break;
+                    }
+                    case "exalted":
+                    {
+                        prices.Add(price["amount"].Value<float>() * ExaltedPrice);
+                        break;
                     }
                 }
-
-                if (prices.Count == 0) return null;
-
-                var min = prices[0];
-                var median = prices[prices.Count / 2];
-                var mean = prices.Sum() / prices.Count;
-
-                var tradeLink = string.Empty;
-                try
-                {
-                    var redirectSource = "https://www.pathofexile.com/api/trade/search/" +
-                                         league +
-                                         "?redirect&source=" +
-                                         JsonConvert.SerializeObject(requestJson);
-                    var myHttpWebRequest = (HttpWebRequest)WebRequest.Create(redirectSource);
-                    var myHttpWebResponse = (HttpWebResponse)myHttpWebRequest.GetResponse();
-                    tradeLink = myHttpWebResponse.ResponseUri.ToString().Replace(" ", "%20");
-                }
-                catch (Exception ex)
-                {
-                    Common.Logger.LogError(ex);
-                }
-
-                var priceData = new PriceData(min, median, mean, mean / ExaltedPrice, tradeLink);
-                return priceData;
-
             }
-            catch (Exception ex)
-            {
-                Common.Logger.LogError(ex);
-                return null;
-            }
+
+            if (prices.Count == 0) return null;
+
+            var min = prices[0];
+            var median = prices[prices.Count / 2];
+            var mean = prices.Sum() / prices.Count;
+            var tradeLink = $"https://www.pathofexile.com/trade/search/{league}/{id}";
+
+            var priceData = new PriceData(min, median, mean, mean / ExaltedPrice, tradeLink);
+            return priceData;
         }
 
         public override string GetItemCategory(string item)
@@ -419,34 +423,49 @@ namespace BotHandlers.APIs
 
         #region обращения к api
 
+        private static string PoeAPIRequest(string url)
+        {
+            while (!_isRequestEnabled) {}
+            _isRequestEnabled = false;
+
+            var ret = Common.GetContent(url);
+            _requestTimer.Start();
+            return ret;
+        }
+
         private JArray Leagues()
         {
-            return JArray.Parse(Common.GetContent("https://www.pathofexile.com/api/leagues"));
+            return JArray.Parse(PoeAPIRequest("https://www.pathofexile.com/api/leagues"));
         }
 
         private JArray Characters(string account)
         {
             return JArray.Parse(
-                Common.GetContent(
+                PoeAPIRequest(
                     $"https://www.pathofexile.com/character-window/get-characters?accountName={account}"));
         }
 
         private JObject Account(string character)
         {
-            return JObject.Parse(Common.GetContent(
+            return JObject.Parse(PoeAPIRequest(
                 $"https://www.pathofexile.com/character-window/get-account-name-by-character?character={character}"));
         }
 
-        private JArray FetchTrade(object requestJson, string league, int resultsNumber = 10)
+        private bool TryFetchTrade(object requestJson, string league, out JArray trades, out string id, int resultsNumber = 10)
         {
             try
             {
+                while (!_isRequestEnabled) { }
+                _isRequestEnabled = false;
+
                 var request =
                     (HttpWebRequest)WebRequest.Create($"https://www.pathofexile.com/api/trade/search/{league}");
                 var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestJson));
                 request.Method = "POST";
                 request.ContentType = "application/json";
                 request.ContentLength = data.Length;
+                request.UserAgent = "poe-bot";
+
                 using (var stream = request.GetRequestStream())
                 {
                     stream.Write(data, 0, data.Length);
@@ -458,21 +477,29 @@ namespace BotHandlers.APIs
                 {
                     responseString = streamReader.ReadToEnd();
                 }
+                _requestTimer.Start();
 
                 var jo = JObject.Parse(responseString);
-                var id = jo["id"].Value<string>();
+                id = jo["id"].Value<string>();
                 var result = jo["result"].Value<JArray>();
                 var results = string.Join(",", result.Take(resultsNumber).Select(t => t.Value<string>().Trim('"')));
 
-                jo = JObject.Parse(
-                    Common.GetContent($"https://www.pathofexile.com/api/trade/fetch/{results}?query={id}"));
+                jo = JObject.Parse(PoeAPIRequest($"https://www.pathofexile.com/api/trade/fetch/{results}?query={id}"));
+                trades = jo["result"].Value<JArray>();
 
-                return jo["result"].Value<JArray>();
+                return true;
             }
             catch (Exception ex)
             {
-                Common.Logger.LogError(ex);
-                return null;
+                Common.Logger?.LogError(ex);
+                if (!_isRequestEnabled && !_requestTimer.Enabled)
+                {
+                    _requestTimer.Start();
+                }
+
+                id = null;
+                trades = null;
+                return false;
             }
         }
 

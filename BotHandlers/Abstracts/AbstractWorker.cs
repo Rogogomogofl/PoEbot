@@ -42,7 +42,7 @@ namespace BotHandlers.Abstracts
             _rssSubscriber.RssUpdated += RssUpdated;
 
             var msg = $"{GetType()} loaded";
-            Common.Logger.LogInfo(msg);
+            Common.Logger?.LogInfo(msg);
             Console.WriteLine(msg);
         }
 

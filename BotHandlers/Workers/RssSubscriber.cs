@@ -85,7 +85,7 @@ namespace BotHandlers.Workers
                 }
                 catch (Exception ex)
                 {
-                    Common.Logger.LogError(ex);
+                    Common.Logger?.LogError(ex);
                 }
             });
         }

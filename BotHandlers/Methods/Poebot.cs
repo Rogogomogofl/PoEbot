@@ -357,7 +357,7 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Common.Logger.LogError(ex);
+                Common.Logger?.LogError(ex);
                 return ("", ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
 
@@ -474,7 +474,7 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Common.Logger.LogError(ex);
+                Common.Logger?.LogError(ex);
                 return new Message(ResponseDictionary.ImageFailed(chatLanguage.Language, name));
             }
 
@@ -521,7 +521,7 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Common.Logger.LogError(ex);
+                Common.Logger?.LogError(ex);
                 return new Message(ResponseDictionary.DatabaseUnavailable(chatLanguage.Language));
             }
         }
@@ -620,7 +620,7 @@ namespace BotHandlers.Methods
                 }
                 catch (Exception ex)
                 {
-                    Common.Logger.LogError(ex);
+                    Common.Logger?.LogError(ex);
                     return new Message(ResponseDictionary.SubscriptionFailed(chatLanguage.Language));
                 }
 
@@ -648,7 +648,7 @@ namespace BotHandlers.Methods
                 }
                 catch (Exception ex)
                 {
-                    Common.Logger.LogError(ex);
+                    Common.Logger?.LogError(ex);
                     return new Message(ResponseDictionary.SubscriptionFailed(chatLanguage.Language));
                 }
             }
@@ -665,7 +665,7 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Common.Logger.LogError(ex);
+                Common.Logger?.LogError(ex);
                 return new Message(ResponseDictionary.IncorrectLanguage(chatLanguage.Language));
             }
 
@@ -695,7 +695,7 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Common.Logger.LogError(ex);
+                Common.Logger?.LogError(ex);
                 return null;
             }
         }
@@ -725,7 +725,7 @@ namespace BotHandlers.Methods
             }
             catch (Exception ex)
             {
-                Common.Logger.LogError(ex);
+                Common.Logger?.LogError(ex);
                 return null;
             }
         }

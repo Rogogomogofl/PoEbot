@@ -71,7 +71,7 @@ namespace VkBot.Workers
                     }
                     catch (Exception ex)
                     {
-                        Common.Logger.LogError(ex);
+                        Common.Logger?.LogError(ex);
                     }
                 }
             }
@@ -142,7 +142,7 @@ namespace VkBot.Workers
 
                 if (!request.Contains("/help"))
                 {
-                    Common.Logger.LogInfo($"Запрос: {request}" +
+                    Common.Logger?.LogInfo($"Запрос: {request}" +
                                     "\n\nОтвет:" +
                                     $"\n{message.Text ?? ""}" +
                                     $"\nВремя ответа: {sw.ElapsedMilliseconds}" +
@@ -168,7 +168,7 @@ namespace VkBot.Workers
                 }
                 catch (Exception ex)
                 {
-                    Common.Logger.LogError(ex);
+                    Common.Logger?.LogError(ex);
                     Thread.Sleep(10000);
                 }
             }

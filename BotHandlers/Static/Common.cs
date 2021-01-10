@@ -14,13 +14,14 @@ namespace BotHandlers.Static
             {
                 var request = (HttpWebRequest)WebRequest.Create(url);
                 request.Proxy = null;
+                request.UserAgent = "poe-bot";
                 using var response = (HttpWebResponse)request.GetResponse();
                 using var reader = new StreamReader(response.GetResponseStream());
                 output = reader.ReadToEnd();
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex);
+                Logger?.LogError(ex);
             }
 
             return output;

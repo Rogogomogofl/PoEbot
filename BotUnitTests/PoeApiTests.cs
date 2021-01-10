@@ -50,7 +50,7 @@ namespace BotUnitTests
             var poebot = new Poebot(_api, new MockPhoto(false), new MockLanguage(_languages));
 
             var message = poebot.ProcessRequest("/p exal orb");
-            var regex = new Regex(@"Минимальная: \d{2,}c");
+            var regex = new Regex(@"Минимальная: \d+.*c");
             Assert.AreNotEqual(null, message);
             Assert.AreEqual(true, regex.IsMatch(message.Text));
 
@@ -70,7 +70,7 @@ namespace BotUnitTests
             var poebot = new Poebot(_api, new MockPhoto(false), new MockLanguage(_languages));
 
             var message = poebot.ProcessRequest("/c Рогогомогофл");
-            Assert.AreEqual(WebUtility.UrlDecode("http://poe-profile.info/profile/Rogogomogofl/Рогогомогофл"), WebUtility.UrlEncode(message?.Text));
+            Assert.AreEqual(WebUtility.UrlDecode("http://poe-profile.info/profile/Rogogomogofl/Рогогомогофл"), WebUtility.UrlDecode(message?.Text));
         }
 
         [TestMethod]
