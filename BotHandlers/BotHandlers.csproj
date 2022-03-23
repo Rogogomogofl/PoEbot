@@ -68,6 +68,7 @@
     <Compile Include="Abstracts\AbstractChatLanguage.cs" />
     <Compile Include="Abstracts\AbstractWorker.cs" />
     <Compile Include="APIs\PoeNinjaAPI.cs" />
+    <Compile Include="APIs\PoE\PoeReqestJSON.cs" />
     <Compile Include="Logger\ConsoleLogger.cs" />
     <Compile Include="Logger\FileLogger.cs" />
     <Compile Include="Logger\ILogger.cs" />
@@ -77,7 +78,7 @@
     <Compile Include="Abstracts\AbstractPhoto.cs" />
     <Compile Include="Static\Common.cs" />
     <Compile Include="Models\Message.cs" />
-    <Compile Include="APIs\PoeAPI.cs" />
+    <Compile Include="APIs\PoE\PoeAPI.cs" />
     <Compile Include="Models\PriceData.cs" />
     <Compile Include="Methods\Poebot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -50,12 +50,12 @@ namespace BotHandlers.Methods
                 return BotCommand(command, param);
             }
 
-            if (Regex.IsMatch(request, @"www[.]reddit[.]com/r/\S+"))
+            if (request.Contains(@"reddit.com/r/"))
             {
                 return SendRedditImage(request);
             }
 
-            if (Regex.IsMatch(request, @"pastebin[.]com/\S+"))
+            if (request.Contains(@"pastebin.com/"))
             {
                 return SendPobPartyLink(request);
             }
@@ -116,7 +116,7 @@ namespace BotHandlers.Methods
             }
 
             string league;
-            var split = srch.Split('|').Select(s => s.Trim(' ')).ToArray();
+            var split = srch.Split('|').Select(s => s.Trim()).ToArray();
             if (split.Length > 1)
             {
                 var leagues = api.GetLeagues();
@@ -226,11 +226,11 @@ namespace BotHandlers.Methods
             var items = new List<string>();
             while (srch.IndexOf('+') > 0)
             {
-                items.Add(srch.Substring(0, srch.IndexOf('+')).TrimStart(' ').TrimEnd(' '));
+                items.Add(srch.Substring(0, srch.IndexOf('+')).Trim());
                 srch = srch.Substring(srch.IndexOf('+') + 1);
             }
 
-            items.Add(srch.TrimStart(' ').TrimEnd(' '));
+            items.Add(srch.Trim());
 
             var uniques = new List<string>();
             var skills = new List<string>();
@@ -306,45 +306,24 @@ namespace BotHandlers.Methods
                 }
             }
 
-            string fstRetStr = ResponseDictionary.BuildsThatUse(chatLanguage.Language),
-                   sndRetStr = ":\nhttps://poe.ninja/challenge/builds?";
-            if (uniques.Count > 0)
-            {
-                sndRetStr += "item=";
-                foreach (var unique in uniques)
-                {
-                    fstRetStr += " " + unique + " +";
-                    sndRetStr += unique.Replace(' ', '-') + ',';
-                }
+            var urlSb = new StringBuilder(":\nhttps://poe.ninja/challenge/builds?");
 
-                sndRetStr = sndRetStr.Substring(0, sndRetStr.Length - 1);
+            if (uniques.Any())
+            {
+                urlSb.Append($"item={string.Join(",", uniques.Select(i => i.Replace(' ', '-')))}");
             }
 
-            if (skills.Count > 0)
+            if (skills.Any())
             {
-                sndRetStr += "&skill=";
-                foreach (var skill in skills)
-                {
-                    fstRetStr += " " + skill + " +";
-                    sndRetStr += skill.Replace(' ', '-') + ',';
-                }
-
-                sndRetStr = sndRetStr.Substring(0, sndRetStr.Length - 1);
+                urlSb.Append($"&skill={string.Join(",", skills.Select(i => i.Replace(' ', '-')))}");
             }
 
-            if (keystones.Count > 0)
+            if (keystones.Any())
             {
-                sndRetStr += "&keystone=";
-                foreach (var keystone in keystones)
-                {
-                    fstRetStr += " " + keystone + " +";
-                    sndRetStr += keystone.Replace(' ', '-') + ',';
-                }
-
-                sndRetStr = sndRetStr.Substring(0, sndRetStr.Length - 1);
+                urlSb.Append($"&keystone={string.Join(",", keystones.Select(i => i.Replace(' ', '-')))}");
             }
 
-            return new Message(fstRetStr.Substring(0, fstRetStr.Length - 2) + sndRetStr);
+            return new Message(ResponseDictionary.BuildsThatUse(chatLanguage.Language) + $" {string.Join(" + ", uniques.Concat(skills).Concat(keystones))}" + urlSb.ToString());
         }
 
         private (string Name, string Url) ItemSearch(string search)

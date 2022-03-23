@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
-using BotHandlers.APIs;
+using BotHandlers.APIs.PoE;
 using BotHandlers.Logger;
 using BotHandlers.Methods;
 using BotHandlers.Mocks;

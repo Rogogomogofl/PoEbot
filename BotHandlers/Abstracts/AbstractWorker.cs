@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using BotHandlers.APIs;
+using BotHandlers.APIs.PoE;
 using BotHandlers.Logger;
 using BotHandlers.Methods;
 using BotHandlers.Models;

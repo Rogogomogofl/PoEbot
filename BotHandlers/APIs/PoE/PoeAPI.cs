@@ -13,7 +13,7 @@ using BotHandlers.Static;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace BotHandlers.APIs
+namespace BotHandlers.APIs.PoE
 {
     public class PoeApi : AbstractApi<KeyValuePair<string, string[]>>
     {
@@ -105,42 +105,7 @@ namespace BotHandlers.APIs
                     return;
                 }
 
-                var requestJson = new
-                {
-                    query = new
-                    {
-                        status = new
-                        {
-                            option = "online"
-                        },
-                        filters = new
-                        {
-                            trade_filters = new
-                            {
-                                disabled = false,
-                                filters = new
-                                {
-                                    sale_type = new
-                                    {
-                                        option = "priced"
-                                    },
-                                    price = new
-                                    {
-                                        option = "chaos",
-                                        min = 1,
-                                        max = 9999
-                                    }
-                                }
-                            }
-                        },
-                        type = "Exalted Orb"
-                    },
-                    sort = new
-                    {
-                        price = "asc"
-                    }
-                };
-                var result = TryFetchTrade(requestJson, DefaultLeague, out var fetchedTrade, out var id);
+                var result = TryFetchTrade(PoeReqestJSON.ExaltedPriceRequest(), DefaultLeague, out var fetchedTrade, out var id);
                 if (!result)
                 {
                     updateTimer.Interval = 60 * 1000;
@@ -272,57 +237,7 @@ namespace BotHandlers.APIs
                 case "Weapons":
                 case "Prophecies":
                     {
-                        requestJson = new
-                        {
-                            query = new
-                            {
-                                status = new
-                                {
-                                    option = "online"
-                                },
-                                filters = new
-                                {
-                                    misc_filters = new
-                                    {
-                                        disabled = false,
-                                        filters = new
-                                        {
-                                            corrupted = new
-                                            {
-                                                option = false
-                                            }
-                                        }
-                                    },
-                                    socket_filters = new
-                                    {
-                                        disabled = false,
-                                        filters = new
-                                        {
-                                            links = new
-                                            {
-                                                min = string.IsNullOrWhiteSpace(links) ? 0 : int.Parse(links)
-                                            }
-                                        }
-                                    },
-                                    trade_filters = new
-                                    {
-                                        disabled = false,
-                                        filters = new
-                                        {
-                                            sale_type = new
-                                            {
-                                                option = "priced"
-                                            }
-                                        }
-                                    }
-                                },
-                                name = item
-                            },
-                            sort = new
-                            {
-                                price = "asc"
-                            }
-                        };
+                        requestJson = PoeReqestJSON.NameAttributeRequest(item, links);
                         break;
                     }
                 //Вещи без аттрибута name, но с аттрибутом type
@@ -332,35 +247,7 @@ namespace BotHandlers.APIs
                 case "Leaguestones":
                 case "Itemised Monsters":
                     {
-                        requestJson = new
-                        {
-                            query = new
-                            {
-                                status = new
-                                {
-                                    option = "online"
-                                },
-                                filters = new
-                                {
-                                    trade_filters = new
-                                    {
-                                        disabled = false,
-                                        filters = new
-                                        {
-                                            sale_type = new
-                                            {
-                                                option = "priced"
-                                            }
-                                        }
-                                    }
-                                },
-                                type = item
-                            },
-                            sort = new
-                            {
-                                price = "asc"
-                            }
-                        };
+                        requestJson = PoeReqestJSON.TypeAttributeRequest(item);
                         break;
                     }
                 default:
@@ -380,15 +267,15 @@ namespace BotHandlers.APIs
                 switch (price["currency"].Value<string>())
                 {
                     case "chaos":
-                    {
-                        prices.Add(price["amount"].Value<float>());
-                        break;
-                    }
+                        {
+                            prices.Add(price["amount"].Value<float>());
+                            break;
+                        }
                     case "exalted":
-                    {
-                        prices.Add(price["amount"].Value<float>() * ExaltedPrice);
-                        break;
-                    }
+                        {
+                            prices.Add(price["amount"].Value<float>() * ExaltedPrice);
+                            break;
+                        }
                 }
             }
 
@@ -425,7 +312,7 @@ namespace BotHandlers.APIs
 
         private static string PoeAPIRequest(string url)
         {
-            while (!_isRequestEnabled) {}
+            while (!_isRequestEnabled) { }
             _isRequestEnabled = false;
 
             var ret = Common.GetContent(url);

@@ -26,11 +26,14 @@ namespace VkBot.Workers
     {
         private readonly VkApi Vkapi = new VkApi();
         private readonly Random Rand = new Random();
-
+        private readonly ulong _groupid;
+        private readonly string _token;
 
         public VkBotWorker(string cachePath, string subPath, string langPath, double rssUpdateInterval = 5 * 60 * 1000) 
             : base(cachePath, subPath, langPath, rssUpdateInterval)
         {
+            _groupid = ulong.Parse(File.ReadAllText("bot/vkgroup.txt"));
+            _token = File.ReadAllText("bot/vktoken.txt");
         }
 
         public override void Work()
@@ -66,7 +69,7 @@ namespace VkBot.Workers
                     catch (LongPollKeyExpiredException)
                     {
                         serverResponse =
-                            Vkapi.Groups.GetLongPollServer(ulong.Parse(File.ReadAllText("bot/vkgroup.txt")));
+                            Vkapi.Groups.GetLongPollServer(_groupid);
                         ts = serverResponse.Ts;
                     }
                     catch (Exception ex)
@@ -161,10 +164,10 @@ namespace VkBot.Workers
                         Console.WriteLine("Authorizing...");
                         Vkapi.Authorize(new ApiAuthParams
                         {
-                            AccessToken = File.ReadAllText("bot/vktoken.txt")
+                            AccessToken = _token
                         });
                     }
-                    return Vkapi.Groups.GetLongPollServer(ulong.Parse(File.ReadAllText("bot/vkgroup.txt")));
+                    return Vkapi.Groups.GetLongPollServer(_groupid);
                 }
                 catch (Exception ex)
                 {
@@ -178,7 +181,7 @@ namespace VkBot.Workers
         {
             if (!Vkapi.IsAuthorized) return;
 
-            if (messagesParams.Message != null && messagesParams.Message.Length > 4096)
+            if (messagesParams.Message?.Length > 4096)
             {
                 messagesParams.Message = messagesParams.Message.Substring(0, 4096);
             }

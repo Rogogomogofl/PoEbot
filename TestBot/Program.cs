@@ -7,7 +7,7 @@ using System.ServiceModel.Syndication;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Xml;
-using BotHandlers.APIs;
+using BotHandlers.APIs.PoE;
 using BotHandlers.Logger;
 using BotHandlers.Methods;
 using BotHandlers.Mocks;
